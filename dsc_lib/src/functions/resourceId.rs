@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-pub struct ResourceId {
-    pub resource_type: String,
-    pub resource_name: String,
-}
+pub struct ResourceId {}
 
 impl Function for ResourceId {
     fn invoke(&self, args: &Vec<FunctionParameter>) -> Result<FunctionParameter, dscerror::DscError> {
@@ -12,9 +9,6 @@ impl Function for ResourceId {
             return Err(dscerror::DscError::InvalidResourceId);
         }
 
-        // if an argument is a function, we need to call it first
-
-
-        Ok(FunctionParameter::String(resource_id))
+        Ok(FunctionParameter::String(format!("{}/{}", args.get(0).unwrap(), args.get(1).unwrap())))
     }
 }

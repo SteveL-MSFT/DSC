@@ -25,6 +25,15 @@ pub enum DscError {
     #[error("Invalid configuration:\n{0}")]
     InvalidConfiguration(String),
 
+    #[error("Invalid function: {0}")]
+    InvalidFunctionName(String),
+
+    #[error("Invalid function parameter for '{0}': {1}")]
+    InvalidFunctionParameter(String, String),
+
+    #[error("Invalid function parameter count, expected {0}, got {1}")]
+    InvalidFunctionParameterCount(usize, usize),
+
     #[error("IO: {0}")]
     Io(#[from] std::io::Error),
 
