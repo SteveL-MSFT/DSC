@@ -1,0 +1,20 @@
+=====
+Simple expression
+=====
+
+[myFunction('argString')]
+
+---
+
+(expression
+    (functionName)
+    (string))
+
+=====
+Multiple arguments
+=====
+
+[myFunction('argString', 1, true)]
+
+---
+
