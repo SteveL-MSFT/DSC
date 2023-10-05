@@ -1,0 +1,28 @@
+{
+  "name": "tree-sitter-dsc-expression",
+  "version": "1.0.0",
+  "description": "Parser for DSC configuration expressions",
+  "main": "grammar.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/powershell/dsc.git"
+  },
+  "keywords": [
+    "dsc"
+  ],
+  "author": "Microsoft",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/powershell/dsc/issues"
+  },
+  "homepage": "https://github.com/powershell/dsc#readme",
+  "dependencies": {
+    "nan": "^2.18.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.8"
+  }
+}
