@@ -2,3 +2,10 @@ Cargo.lock
 target
 bin/
 .DS_Store
+
+# Node.js generated files for tree-sitter
+bindings/
+build/
+node_modules/
+binding.gyp
+package-lock.json
