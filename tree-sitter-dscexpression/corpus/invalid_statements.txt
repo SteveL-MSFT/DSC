@@ -1,0 +1,42 @@
+=====
+String parameter not in quotes
+=====
+
+[functionOne(alpha, beta)]
+
+---
+
+    (statement
+      (expression
+        (function
+          (functionName)
+          (ERROR
+            (functionName)
+            (functionName)))))
+
+=====
+Missing parenthesis
+=====
+
+[functionOne]
+
+---
+
+    (ERROR
+      (functionName))
+
+=====
+Missing parameter
+=====
+
+[functionOne(1, ,2)]
+
+---
+
+    (statement
+      (expression
+        (function
+          (functionName)
+          (number)
+          (ERROR)
+          (number))))
