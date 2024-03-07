@@ -5,18 +5,18 @@ use core::mem::size_of;
 use ntapi::ntregapi::{self, KEY_FULL_INFORMATION, KEY_BASIC_INFORMATION, PKEY_BASIC_INFORMATION, PKEY_FULL_INFORMATION};
 use ntapi::winapi::ctypes::c_void;
 use ntapi::winapi::shared::ntdef::{HANDLE, NTSTATUS, NT_SUCCESS};
-use ntapi::winapi::shared::ntstatus::{STATUS_OBJECT_PATH_SYNTAX_BAD};
-use ntapi::winapi::um::handleapi::{INVALID_HANDLE_VALUE};
+use ntapi::winapi::shared::ntstatus::STATUS_OBJECT_PATH_SYNTAX_BAD;
+use ntapi::winapi::um::handleapi::INVALID_HANDLE_VALUE;
 use ntapi::winapi::um::winnt::{KEY_ALL_ACCESS, KEY_CREATE_SUB_KEY, KEY_READ, ACCESS_MASK, KEY_SET_VALUE};
-use ntuserinfo::{NtCurrentUserInfo};
-use ntstatuserror::{NtStatusError};
+use ntuserinfo::NtCurrentUserInfo;
+use ntstatuserror::NtStatusError;
 use std::ptr::null_mut;
 
-use super::*;
-use registry_value::*;
+use super::{AsUnicodeString, ERROR_NO_MORE_ITEMS, ObjectAttributes, UNICODE_STRING, registry_value};
+use registry_value::{RegistryValue, RegistryValueData, RegistryValues};
 
-const REG_OPTION_NON_VOLATILE: u32 = 0x00000000;
-const REG_OPENED_EXISTING_KEY: u32 = 0x00000002;
+const REG_OPTION_NON_VOLATILE: u32 = 0x0000_0000;
+const REG_OPENED_EXISTING_KEY: u32 = 0x0000_0002;
 
 /// Represents a registry key including its properties.
 #[derive(Clone)]
@@ -32,13 +32,17 @@ pub struct RegistryKey {
 }
 
 impl RegistryKey {
-    /// Returns a RegistryKey object for a valid existing path.
+    /// Returns a `RegistryKey`` object for a valid existing path.
     ///
     /// # Arguments
     ///
     /// * `path` - A string containing the path to the registry key.
     ///   The path can be a NT path `\Registry\Machine\...` or a Win32 path `HKLM\...`.
     ///   The path will be opened for read access.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the path is invalid or the key does not exist.
     ///
     /// # Examples
     ///
@@ -54,7 +58,7 @@ impl RegistryKey {
                     RegistryKey {
                         handle: key,
                         path: path.to_string(),
-                        name: path.split('\\').last().unwrap().to_string(),
+                        name: path.split('\\').last().unwrap_or_default().to_string(),
                         sub_key_count: key_information.SubKeys,
                         max_key_name_len: key_information.MaxNameLen,
                         value_count: key_information.Values,
@@ -80,6 +84,7 @@ impl RegistryKey {
     ///    println!("{}", sub_key.name);
     /// }
     /// ```
+    #[must_use]
     pub fn subkeys(self) -> RegistrySubkeys {
         RegistrySubkeys {
             key: self,
@@ -98,6 +103,7 @@ impl RegistryKey {
     ///   println!("{}", value.name);
     /// }
     /// ```
+    #[must_use]
     pub fn values(self) -> RegistryValues {
         RegistryValues {
             key: self,
@@ -157,6 +163,10 @@ impl RegistryKey {
     /// * `name` - A string containing the name of the new sub key.
     ///   This will fail if the sub key already exists.
     ///
+    /// # Errors
+    ///
+    /// Returns an error if the sub key already exists.
+    ///
     /// # Examples
     ///
     /// ```
@@ -175,6 +185,10 @@ impl RegistryKey {
     /// # Arguments
     ///
     /// * `name` - A string containing the name of the new sub key.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the key cannot be retrieved or created.
     ///
     /// # Examples
     ///
@@ -293,6 +307,11 @@ impl RegistryKey {
     ///
     /// # Arguments
     /// * `name` - A string containing the name of the value.
+    /// * `value` - A `RegistryValueData` containing the value data.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the value cannot be set.
     ///
     /// # Remarks
     /// Returns a RegistryValue representing the new value.
@@ -456,7 +475,7 @@ impl Iterator for RegistrySubkeys {
 
         self.index += 1;
 
-        let sub_key_path = format!("{}\\{}", self.key.path, name);
+        let sub_key_path = format!("{}\\{name}", self.key.path);
         Some(RegistryKey::new(sub_key_path.as_str()).unwrap())
     }
 }
@@ -473,7 +492,7 @@ fn open_key(path: &str, desired_access: ACCESS_MASK) -> Result<(HANDLE, KEY_FULL
     };
 
     if !NT_SUCCESS(status) {
-        return Err(NtStatusError::new(status, format!("Failed to open key '{}'.", path).as_str()));
+        return Err(NtStatusError::new(status, format!("Failed to open key '{path}'.").as_str()));
     }
 
     let key_information: KEY_FULL_INFORMATION = unsafe {

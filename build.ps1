@@ -124,7 +124,7 @@ $projects = @(
     "resources/brew",
     "runcommandonset"
 )
-$pedantic_unclean_projects = @("ntreg")
+$pedantic_unclean_projects = @()
 $clippy_unclean_projects = @("tree-sitter-dscexpression")
 $skip_test_projects_on_windows = @("tree-sitter-dscexpression")
 

@@ -133,17 +133,17 @@ impl fmt::Display for RegistryValueData {
             RegistryValueData::None => "None".to_string(),
             RegistryValueData::String(ref data) => format!("String: {data}"),
             RegistryValueData::ExpandString(ref data) => format!("ExpandString: {data}"),
-            RegistryValueData::Binary(ref data) => format!("Binary: {}", convert_vec_to_string(&data.to_vec())),
+            RegistryValueData::Binary(ref data) => format!("Binary: {}", convert_vec_to_string(&data.clone())),
             RegistryValueData::DWord(ref data) => format!("Dword: {data}"),
             RegistryValueData::Link(ref data) => format!("Link: {data}"),
             RegistryValueData::MultiString(ref data) => format!("MultiString: {data:?}"),
-            RegistryValueData::ResourceList(ref data) => format!("ResourceList: {:?}", convert_vec_to_string(&data.to_vec())),
-            RegistryValueData::FullResourceDescriptor(ref data) => format!("FullResourceDescriptor: {:?}", convert_vec_to_string(&data.to_vec())),
-            RegistryValueData::ResourceRequirementsList(ref data) => format!("ResourceRequirementsList: {:?}", convert_vec_to_string(&data.to_vec())),
+            RegistryValueData::ResourceList(ref data) => format!("ResourceList: {:?}", convert_vec_to_string(&data.clone())),
+            RegistryValueData::FullResourceDescriptor(ref data) => format!("FullResourceDescriptor: {:?}", convert_vec_to_string(&data.clone())),
+            RegistryValueData::ResourceRequirementsList(ref data) => format!("ResourceRequirementsList: {:?}", convert_vec_to_string(&data.clone())),
             RegistryValueData::QWord(ref data) => format!("Qword: {data}"),
         };
 
-        write!(f, "{}", data)
+        write!(f, "{data}")
     }
 }
 
