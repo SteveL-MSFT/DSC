@@ -39,6 +39,12 @@ pub enum SubCommand {
         input: String,
     },
 
+    #[clap(name = "export", about = "Test export capability")]
+    Export {
+        #[clap(name = "instance", short, long, help = "The instance to export")]
+        instance: Option<String>,
+    },
+
     #[clap(name = "schema", about = "Get the JSON schema for a subcommand")]
     Schema {
         #[clap(name = "subcommand", short, long, help = "The subcommand to get the schema for")]

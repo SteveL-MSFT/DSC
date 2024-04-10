@@ -5,6 +5,7 @@ mod args;
 mod delete;
 mod echo;
 mod exist;
+mod export;
 mod sleep;
 
 use args::{Args, Schemas, SubCommand};
@@ -13,6 +14,7 @@ use schemars::schema_for;
 use crate::delete::Delete;
 use crate::echo::Echo;
 use crate::exist::{Exist, State};
+use crate::export::Export;
 use crate::sleep::Sleep;
 use std::{thread, time::Duration};
 
@@ -55,6 +57,23 @@ fn main() {
             }
 
             serde_json::to_string(&exist).unwrap()
+        },
+        SubCommand::Export { instance } => {
+             match instance {
+                Some(instance) => {
+                    let export = Export { instance };
+                    serde_json::to_string(&export).unwrap()
+                },
+                None => {
+                    let mut export_string = String::new();
+                    for i in 0..5 {
+                        let export = Export { instance: format!("Instance{i}") };
+                        export_string.push_str(&serde_json::to_string(&export).unwrap());
+                        export_string.push_str("\n");
+                    }
+                    export_string
+                }
+            }
         },
         SubCommand::Schema { subcommand } => {
             let schema = match subcommand {
