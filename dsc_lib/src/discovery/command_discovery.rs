@@ -220,7 +220,7 @@ impl ResourceDiscovery for CommandDiscovery {
     }
 
     #[allow(clippy::too_many_lines)]
-    fn discover_resources(&mut self, required_resource_types: &[String]) -> Result<BTreeMap<String, DscResource>, DscError>
+    fn discover_resources(&mut self, required_resource_types: &[String]) -> Result<BTreeMap<String, Vec<DscResource>>, DscError>
     {
         debug!("Searching for resources: {:?}", required_resource_types);
 

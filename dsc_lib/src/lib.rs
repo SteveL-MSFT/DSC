@@ -35,8 +35,8 @@ impl DscManager {
     /// * `name` - The name of the resource to find, can have wildcards.
     ///
     #[must_use]
-    pub fn find_resource(&self, name: &str) -> Option<&DscResource> {
-        self.discovery.find_resource(name)
+    pub fn find_resource(&self, name: &str, version: Option<&str>) -> Option<&DscResource> {
+        self.discovery.find_resource(name, version)
     }
 
     pub fn list_available_resources(&mut self, type_name_filter: &str, adapter_name_filter: &str) -> Vec<DscResource> {

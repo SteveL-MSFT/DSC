@@ -6,6 +6,7 @@ mod delete;
 mod echo;
 mod exist;
 mod sleep;
+mod version;
 
 use args::{Args, Schemas, SubCommand};
 use clap::Parser;
@@ -14,6 +15,7 @@ use crate::delete::Delete;
 use crate::echo::Echo;
 use crate::exist::{Exist, State};
 use crate::sleep::Sleep;
+use crate::version::Version;
 use std::{thread, time::Duration};
 
 fn main() {
@@ -70,6 +72,9 @@ fn main() {
                 Schemas::Sleep => {
                     schema_for!(Sleep)
                 },
+                Schemas::Version => {
+                    schema_for!(Version)
+                },
             };
             serde_json::to_string(&schema).unwrap()
         },
@@ -83,6 +88,12 @@ fn main() {
             };
             thread::sleep(Duration::from_secs(sleep.seconds));
             serde_json::to_string(&sleep).unwrap()
+        },
+        SubCommand::Version { version } => {
+            let version = Version {
+                version
+            };
+            serde_json::to_string(&version).unwrap()
         },
     };
 

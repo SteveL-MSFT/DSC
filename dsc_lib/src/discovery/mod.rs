@@ -54,7 +54,7 @@ impl Discovery {
     }
 
     #[must_use]
-    pub fn find_resource(&self, type_name: &str) -> Option<&DscResource> {
+    pub fn find_resource(&self, type_name: &str, version: Option<&str>) -> Option<&DscResource> {
         self.resources.get(type_name)
     }
 
@@ -76,7 +76,14 @@ impl Discovery {
                 };
 
             for resource in discovered_resources {
-                self.resources.insert(resource.0.clone(), resource.1);
+                // can discover multiple versions of same resource,
+                // so we need to check if we already have a resource with the same type name
+                // and append to the existing resource's vector of versions
+                if self.resources.contains_key(&resource.0) {
+                    self.resources.get_mut(&resource.0).unwrap().push(resource.1);
+                } else {
+                    self.resources.insert(resource.0.clone(), vec![resource.1]);
+                }
                 remaining_required_resource_types.retain(|x| *x != resource.0);
             };
         }
