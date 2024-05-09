@@ -5,6 +5,9 @@ registry-auth = true
 [registries]
 powershell = { index = "sparse+https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/Cargo/index/" }
 
+[source.crates-io]
+replace-with = "powershell"
+
 # Enable Control Flow Guard (needed for OneBranch's post-build analysis).
 [target.'cfg(target_os = "windows")']
 rustflags = ["-Ccontrol-flow-guard", "-Ctarget-feature=+crt-static", "-Clink-args=/DYNAMICBASE /CETCOMPAT"]
