@@ -415,7 +415,7 @@ pub fn validate_config(config: &str) -> Result<(), DscError> {
         trace!("Validating resource named '{}'", resource_block["name"].as_str().unwrap_or_default());
 
         // get the actual resource
-        let Some(resource) = get_resource(&dsc, type_name) else {
+        let Some(resource) = get_resource(&mut dsc, type_name) else {
             return Err(DscError::Validation(format!("Error: Resource type '{type_name}' not found")));
         };
 
@@ -471,7 +471,7 @@ pub fn resource(subcommand: &ResourceSubCommand, stdin: &Option<String>) {
         },
         ResourceSubCommand::Schema { resource , format } => {
             dsc.find_resources(&[resource.to_string()]);
-            resource_command::schema(&dsc, resource, format);
+            resource_command::schema(&mut dsc, resource, format);
         },
         ResourceSubCommand::Export { resource, format } => {
             dsc.find_resources(&[resource.to_string()]);
@@ -479,26 +479,26 @@ pub fn resource(subcommand: &ResourceSubCommand, stdin: &Option<String>) {
         },
         ResourceSubCommand::Get { resource, input, path, all, format } => {
             dsc.find_resources(&[resource.to_string()]);
-            if *all { resource_command::get_all(&dsc, resource, format); }
+            if *all { resource_command::get_all(&mut dsc, resource, format); }
             else {
                 let parsed_input = get_input(input, stdin, path);
-                resource_command::get(&dsc, resource, parsed_input, format);
+                resource_command::get(&mut dsc, resource, parsed_input, format);
             }
         },
         ResourceSubCommand::Set { resource, input, path, format } => {
             dsc.find_resources(&[resource.to_string()]);
             let parsed_input = get_input(input, stdin, path);
-            resource_command::set(&dsc, resource, parsed_input, format);
+            resource_command::set(&mut dsc, resource, parsed_input, format);
         },
         ResourceSubCommand::Test { resource, input, path, format } => {
             dsc.find_resources(&[resource.to_string()]);
             let parsed_input = get_input(input, stdin, path);
-            resource_command::test(&dsc, resource, parsed_input, format);
+            resource_command::test(&mut dsc, resource, parsed_input, format);
         },
         ResourceSubCommand::Delete { resource, input, path } => {
             dsc.find_resources(&[resource.to_string()]);
             let parsed_input = get_input(input, stdin, path);
-            resource_command::delete(&dsc, resource, parsed_input);
+            resource_command::delete(&mut dsc, resource, parsed_input);
         },
     }
 }

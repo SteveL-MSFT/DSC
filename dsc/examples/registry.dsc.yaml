@@ -1,0 +1,17 @@
+# Simple example using two different resources and one of them twice.
+$schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2024/04/config/document.json
+resources:
+- name: reg1
+  type: Microsoft.Windows/Registry
+  properties:
+    keyPath: HKCU\Example\TestKey
+    valueName: Hello
+    valueData:
+      String: World
+- name: reg2
+  type: Microsoft.Windows/Registry
+  properties:
+    keyPath: HKCU\Example\TestKey
+    valueName: PowerShell
+    valueData:
+      String: Rocks!

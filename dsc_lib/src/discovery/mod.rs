@@ -64,7 +64,12 @@ impl Discovery {
     }
 
     #[must_use]
-    pub fn find_resource(&self, type_name: &str) -> Option<&DscResource> {
+    pub fn find_resource(&mut self, type_name: &str) -> Option<&DscResource> {
+        // see if input is a serialized DscResource first
+        if let Ok(resource) = serde_json::from_str::<DscResource>(type_name) {
+            self.resources.insert(resource.type_name.to_lowercase(), resource);
+        }
+
         self.resources.get(&type_name.to_lowercase())
     }
 

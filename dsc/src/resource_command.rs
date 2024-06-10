@@ -15,8 +15,9 @@ use dsc_lib::{
 };
 use std::process::exit;
 
-pub fn get(dsc: &DscManager, resource_type: &str, mut input: String, format: &Option<OutputFormat>) {
-    let Some(mut resource) = get_resource(dsc, resource_type) else {
+pub fn get(dsc: &mut DscManager, resource_type: &str, mut input: String, format: &Option<OutputFormat>) {
+    let mut resource: DscResource;
+    let Some(resource) = get_resource(dsc, resource_type) else {
         error!("{}", DscError::ResourceNotFound(resource_type.to_string()).to_string());
         return
     };
@@ -51,7 +52,7 @@ pub fn get(dsc: &DscManager, resource_type: &str, mut input: String, format: &Op
     }
 }
 
-pub fn get_all(dsc: &DscManager, resource_type: &str, format: &Option<OutputFormat>) {
+pub fn get_all(dsc: &mut DscManager, resource_type: &str, format: &Option<OutputFormat>) {
     let mut input = String::new();
     let Some(mut resource) = get_resource(dsc, resource_type) else {
         error!("{}", DscError::ResourceNotFound(resource_type.to_string()).to_string());
@@ -94,7 +95,7 @@ pub fn get_all(dsc: &DscManager, resource_type: &str, format: &Option<OutputForm
     }
 }
 
-pub fn set(dsc: &DscManager, resource_type: &str, mut input: String, format: &Option<OutputFormat>) {
+pub fn set(dsc: &mut DscManager, resource_type: &str, mut input: String, format: &Option<OutputFormat>) {
     if input.is_empty() {
         error!("Error: Input is empty");
         exit(EXIT_INVALID_ARGS);
@@ -136,7 +137,7 @@ pub fn set(dsc: &DscManager, resource_type: &str, mut input: String, format: &Op
     }
 }
 
-pub fn test(dsc: &DscManager, resource_type: &str, mut input: String, format: &Option<OutputFormat>) {
+pub fn test(dsc: &mut DscManager, resource_type: &str, mut input: String, format: &Option<OutputFormat>) {
     let Some(mut resource) = get_resource(dsc, resource_type) else {
         error!("{}", DscError::ResourceNotFound(resource_type.to_string()).to_string());
         return
@@ -173,7 +174,7 @@ pub fn test(dsc: &DscManager, resource_type: &str, mut input: String, format: &O
     }
 }
 
-pub fn delete(dsc: &DscManager, resource_type: &str, mut input: String) {
+pub fn delete(dsc: &mut DscManager, resource_type: &str, mut input: String) {
     let Some(mut resource) = get_resource(dsc, resource_type) else {
         error!("{}", DscError::ResourceNotFound(resource_type.to_string()).to_string());
         return
@@ -200,7 +201,7 @@ pub fn delete(dsc: &DscManager, resource_type: &str, mut input: String) {
     }
 }
 
-pub fn schema(dsc: &DscManager, resource_type: &str, format: &Option<OutputFormat>) {
+pub fn schema(dsc: &mut DscManager, resource_type: &str, format: &Option<OutputFormat>) {
     let Some(resource) = get_resource(dsc, resource_type) else {
         error!("{}", DscError::ResourceNotFound(resource_type.to_string()).to_string());
         return
@@ -260,7 +261,6 @@ pub fn export(dsc: &mut DscManager, resource_type: &str, format: &Option<OutputF
 }
 
 #[must_use]
-pub fn get_resource<'a>(dsc: &'a DscManager, resource: &str) -> Option<&'a DscResource> {
-    //TODO: add dynamically generated resource to dsc
+pub fn get_resource<'a>(dsc: &'a mut DscManager, resource: &str) -> Option<&'a DscResource> {
     dsc.find_resource(resource)
 }
