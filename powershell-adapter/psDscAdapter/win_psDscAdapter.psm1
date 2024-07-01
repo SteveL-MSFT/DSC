@@ -80,6 +80,7 @@ function Invoke-DscCacheRefresh {
                 # if there is nothing in the cache file - refresh cache
                 $refreshCache = $true
                "Filtered DscResourceCache cache is empty" | Write-DscTrace
+            }
         }
         else
         {
