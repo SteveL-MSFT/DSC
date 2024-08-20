@@ -189,6 +189,7 @@ extends:
       - job: CreateMsixBundle
         dependsOn: BuildWin
         variables:
+          ob_sdl_tsa_configFile: $(Build.SourcesDirectory)\DSC\.config\tsaoptions.json
           ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
         pool:
           type: windows
