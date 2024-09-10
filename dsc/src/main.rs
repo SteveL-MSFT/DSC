@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use args::{Args, SubCommand};
+use args::{Arguments, SubCommand};
 use atty::Stream;
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
@@ -33,7 +33,7 @@ fn main() {
         error!("Error: Failed to set Ctrl-C handler");
     }
 
-    let args = Args::parse();
+    let args = Arguments::parse();
 
     util::enable_tracing(&args.trace_level, &args.trace_format);
 
@@ -66,11 +66,11 @@ fn main() {
     match args.subcommand {
         SubCommand::Completer { shell } => {
             info!("Generating completion script for {:?}", shell);
-            let mut cmd = Args::command();
+            let mut cmd = Arguments::command();
             generate(shell, &mut cmd, "dsc", &mut io::stdout());
         },
-        SubCommand::Config { subcommand, parameters, parameters_file, as_group, as_include } => {
-            if let Some(file_name) = parameters_file {
+        SubCommand::Config { subcommand, context, as_group, as_include } => {
+            if let Some(file_name) = context.parameters_file {
                 info!("Reading parameters from file {file_name}");
                 match std::fs::read_to_string(&file_name) {
                     Ok(parameters) => subcommand::config(&subcommand, &Some(parameters), &input, &as_group, &as_include),
@@ -81,7 +81,7 @@ fn main() {
                 }
             }
             else {
-                subcommand::config(&subcommand, &parameters, &input, &as_group, &as_include);
+                subcommand::config(&subcommand, &context.parameters, &input, &as_group, &as_include);
             }
         },
         SubCommand::Resource { subcommand } => {

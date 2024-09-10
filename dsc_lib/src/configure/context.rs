@@ -4,17 +4,20 @@
 use chrono::{DateTime, Local};
 use crate::configure::config_doc::ExecutionKind;
 use security_context_lib::{get_security_context, SecurityContext};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
 use super::config_doc::{DataType, SecurityContextKind};
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Context {
     pub execution_type: ExecutionKind,
     pub outputs: HashMap<String, Value>, // this is used by the `reference()` function to retrieve output
     pub parameters: HashMap<String, (Value, DataType)>,
     pub security_context: SecurityContextKind,
     pub variables: HashMap<String, Value>,
+    #[serde(skip_serializing, skip_deserializing)]
     pub start_datetime: DateTime<Local>,
 }
 

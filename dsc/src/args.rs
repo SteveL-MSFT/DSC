@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use dsc_lib::dscresources::command_resource::TraceLevel;
 
@@ -23,7 +23,7 @@ pub enum TraceFormat {
 
 #[derive(Debug, Parser)]
 #[clap(name = "dsc", version = env!("CARGO_PKG_VERSION"), about = "Apply configuration or invoke specific DSC resources", long_about = None)]
-pub struct Args {
+pub struct Arguments {
     /// The subcommand to run
     #[clap(subcommand)]
     pub subcommand: SubCommand,
@@ -44,10 +44,8 @@ pub enum SubCommand {
     Config {
         #[clap(subcommand)]
         subcommand: ConfigSubCommand,
-        #[clap(short, long, help = "Parameters to pass to the configuration as JSON or YAML", conflicts_with = "parameters_file")]
-        parameters: Option<String>,
-        #[clap(short = 'f', long, help = "Parameters to pass to the configuration as a JSON or YAML file", conflicts_with = "parameters")]
-        parameters_file: Option<String>,
+        #[clap(flatten)]
+        context: ContextArgs,
         // Used to inform when DSC is used as a group resource to modify it's output
         #[clap(long, hide = true)]
         as_group: bool,
@@ -67,6 +65,18 @@ pub enum SubCommand {
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     },
+}
+
+#[derive(Args, Debug, PartialEq, Eq)]
+#[group(required = false, multiple = false)]
+pub struct ContextArgs {
+    #[arg(short, long, help = "Parameters to pass to the configuration as JSON or YAML")]
+    pub parameters: Option<String>,
+    #[arg(short = 'f', long, help = "Parameters to pass to the configuration as a JSON or YAML file")]
+    pub parameters_file: Option<String>,
+    // Used to pass the context to the configuration
+    #[arg(long, hide = true)]
+    pub context: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
