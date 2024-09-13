@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 use crate::configure::config_doc::{ExecutionKind, Metadata};
-use crate::configure::parameters::Input;
 use crate::dscerror::DscError;
 use crate::dscresources::{
     {dscresource::{Capability, Invoke, get_diff}, invoke_result::{SetResult, ResourceSetResponse}},
@@ -488,17 +487,17 @@ impl Configurator {
     /// # Errors
     ///
     /// This function will return an error if the parameters are invalid.
-    pub fn set_context(&mut self, parameters_input: &Option<Value>) -> Result<(), DscError> {
+    pub fn set_context(&mut self, context: &Context) -> Result<(), DscError> {
         let config = serde_json::from_str::<Configuration>(self.json.as_str())?;
-        self.set_parameters(parameters_input, &config)?;
+        self.set_parameters(&context.parameters, &config)?;
         self.set_variables(&config)?;
         Ok(())
     }
 
-    fn set_parameters(&mut self, parameters_input: &Option<Value>, config: &Configuration) -> Result<(), DscError> {
+    fn set_parameters(&mut self, parameters_input: &HashMap<String, (Value, DataType)>, config: &Configuration) -> Result<(), DscError> {
         // set default parameters first
         let Some(parameters) = &config.parameters else {
-            if parameters_input.is_none() {
+            if parameters_input.is_empty() {
                 info!("No parameters defined in configuration and no parameters input");
                 return Ok(());
             }
@@ -524,18 +523,17 @@ impl Configurator {
             }
         }
 
-        let Some(parameters_input) = parameters_input else {
+        if parameters_input.is_empty() {
             debug!("No parameters input");
             return Ok(());
         };
 
-        trace!("parameters_input: {parameters_input}");
-        let parameters: HashMap<String, Value> = serde_json::from_value::<Input>(parameters_input.clone())?.parameters;
         let Some(parameters_constraints) = &config.parameters else {
             return Err(DscError::Validation("No parameters defined in configuration".to_string()));
         };
-        for (name, value) in parameters {
-            if let Some(constraint) = parameters_constraints.get(&name) {
+
+        for (name, (value, _data_type)) in parameters_input {
+            if let Some(constraint) = parameters_constraints.get(name) {
                 debug!("Validating parameter '{name}'");
                 check_length(&name, &value, constraint)?;
                 check_allowed_values(&name, &value, constraint)?;
@@ -553,8 +551,8 @@ impl Configurator {
                 self.context.parameters.insert(name.clone(), (value.clone(), constraint.parameter_type.clone()));
                 // also update the configuration with the parameter value
                 if let Some(parameters) = &mut self.config.parameters {
-                    if let Some(parameter) = parameters.get_mut(&name) {
-                        parameter.default_value = Some(value);
+                    if let Some(parameter) = parameters.get_mut(name) {
+                        parameter.default_value = Some(value.clone());
                     }
                 }
             }

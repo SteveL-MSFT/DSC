@@ -7,7 +7,7 @@ use crate::resource_command::{get_resource, self};
 use crate::Stream;
 use crate::tablewriter::Table;
 use crate::util::{DSC_CONFIG_ROOT, EXIT_DSC_ERROR, EXIT_INVALID_INPUT, EXIT_JSON_ERROR, get_schema, write_output, get_input, set_dscconfigroot, validate_json};
-use dsc_lib::configure::{Configurator, config_doc::{Configuration, ExecutionKind}, config_result::ResourceGetResult};
+use dsc_lib::configure::{Configurator, config_doc::{Configuration, DataType, ExecutionKind}, config_result::ResourceGetResult, context::Context};
 use dsc_lib::dscerror::DscError;
 use dsc_lib::dscresources::invoke_result::ResolveResult;
 use dsc_lib::{
@@ -270,7 +270,15 @@ pub fn config(subcommand: &ConfigSubCommand, parameters: &Option<String>, stdin:
         }
     };
 
-    if let Err(err) = configurator.set_context(&parameters) {
+    let context = &mut Context::new();
+    if let Some(parameters) = parameters {
+        for (key, value) in parameters.as_object().unwrap() {
+            // Note: the datatype is not used in the context, but it is required when validating parameters defined in the configuration
+            context.parameters.insert(key.clone(), (value.clone(), DataType::String));
+        }
+    }
+
+    if let Err(err) = configurator.set_context(&context) {
         error!("Error: Parameter input failure: {err}");
         exit(EXIT_INVALID_INPUT);
     }

@@ -5,11 +5,11 @@ use args::{Arguments, SubCommand};
 use atty::Stream;
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
+use dsc_lib::configure::context::Context;
 use std::io::{self, Read};
 use std::process::exit;
 use sysinfo::{Process, RefreshKind, System, get_current_pid, ProcessRefreshKind};
 use tracing::{error, info, warn, debug};
-
 #[cfg(debug_assertions)]
 use crossterm::event;
 #[cfg(debug_assertions)]
@@ -70,6 +70,15 @@ fn main() {
             generate(shell, &mut cmd, "dsc", &mut io::stdout());
         },
         SubCommand::Config { subcommand, context, as_group, as_include } => {
+            if let Some(context_content) = context.context {
+                let context = match serde_json::from_str::<Context>(&context_content) {
+                    Ok(context) => context,
+                    Err(err) => {
+                        error!("JSON Error: {err}");
+                        exit(util::EXIT_JSON_ERROR);
+                    }
+                };
+            }
             if let Some(file_name) = context.parameters_file {
                 info!("Reading parameters from file {file_name}");
                 match std::fs::read_to_string(&file_name) {
