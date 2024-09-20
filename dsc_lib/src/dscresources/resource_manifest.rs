@@ -98,6 +98,12 @@ pub enum ManifestSchemaUri {
 pub enum ArgKind {
     /// The argument is a string.
     String(String),
+    /// The argument is the execution context.
+    Context {
+        /// The argument that accepts the execution context as JSON.
+        #[serde(rename = "contextArg")]
+        arg: String,
+    },
     /// The argument accepts the JSON input object.
     Json {
         /// The argument that accepts the JSON input object.
