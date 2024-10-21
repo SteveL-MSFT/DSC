@@ -31,23 +31,26 @@ impl Function for Parameters {
             trace!("parameters key: {key}");
             if context.parameters.contains_key(key) {
                 let (value, data_type) = &context.parameters[key];
-
-                // if secureString or secureObject types, we keep it as JSON object
-                match data_type {
-                    DataType::SecureString => {
-                        let Some(value) = value.as_str() else {
-                            return Err(DscError::Parser(format!("Parameter '{key}' is not a string")));
-                        };
-                        let secure_string = SecureKind::SecureString(value.to_string());
-                        Ok(serde_json::to_value(secure_string)?)
-                    },
-                    DataType::SecureObject => {
-                        let secure_object = SecureKind::SecureObject(value.clone());
-                        Ok(serde_json::to_value(secure_object)?)
-                    },
-                    _ => {
-                        Ok(value.clone())
+                if let Some(data_type) = data_type {
+                    // if secureString or secureObject types, we keep it as JSON object
+                    match data_type {
+                        DataType::SecureString => {
+                            let Some(value) = value.as_str() else {
+                                return Err(DscError::Parser(format!("Parameter '{key}' is not a string")));
+                            };
+                            let secure_string = SecureKind::SecureString(value.to_string());
+                            Ok(serde_json::to_value(secure_string)?)
+                        },
+                        DataType::SecureObject => {
+                            let secure_object = SecureKind::SecureObject(value.clone());
+                            Ok(serde_json::to_value(secure_object)?)
+                        },
+                        _ => {
+                            Ok(value.clone())
+                        }
                     }
+                } else {
+                    Ok(value.clone())
                 }
             }
             else {

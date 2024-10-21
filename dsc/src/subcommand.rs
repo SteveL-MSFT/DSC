@@ -6,8 +6,8 @@ use crate::resolve::{get_contents, Include};
 use crate::resource_command::{get_resource, self};
 use crate::Stream;
 use crate::tablewriter::Table;
-use crate::util::{DSC_CONFIG_ROOT, EXIT_DSC_ERROR, EXIT_INVALID_INPUT, EXIT_JSON_ERROR, get_schema, write_output, get_input, set_dscconfigroot, validate_json};
-use dsc_lib::configure::{Configurator, config_doc::{Configuration, DataType, ExecutionKind}, config_result::ResourceGetResult, context::Context};
+use crate::util::{get_input, get_parameters, get_schema, set_dscconfigroot, validate_json, write_output, DSC_CONFIG_ROOT, EXIT_DSC_ERROR, EXIT_INVALID_INPUT, EXIT_JSON_ERROR};
+use dsc_lib::configure::{Configurator, config_doc::{Configuration, ExecutionKind}, config_result::ResourceGetResult, context::Context};
 use dsc_lib::dscerror::DscError;
 use dsc_lib::dscresources::invoke_result::ResolveResult;
 use dsc_lib::{
@@ -186,7 +186,7 @@ fn initialize_config_root(path: &Option<String>) -> Option<String> {
 }
 
 #[allow(clippy::too_many_lines)]
-pub fn config(subcommand: &ConfigSubCommand, context_json: &Option<String>, stdin: &Option<String>, as_group: &bool, as_include: &bool) {
+pub fn config(subcommand: &ConfigSubCommand, context: &mut Context, stdin: &Option<String>, as_group: &bool, as_include: &bool) {
     let (new_parameters, json_string) = match subcommand {
         ConfigSubCommand::Get { document, path, .. } |
         ConfigSubCommand::Set { document, path, .. } |
@@ -236,50 +236,16 @@ pub fn config(subcommand: &ConfigSubCommand, context_json: &Option<String>, stdi
         }
     };
 
-    let parameters: Option<serde_json::Value> = match if new_parameters.is_some() {
-        &new_parameters
-    } else {
-        parameters
-    } {
-        None => {
-            debug!("No parameters specified");
-            None
-        },
-        Some(parameters) => {
-            debug!("Parameters specified");
-            match serde_json::from_str(parameters) {
-                Ok(json) => Some(json),
-                Err(_) => {
-                    match serde_yaml::from_str::<serde_yaml::Value>(parameters) {
-                        Ok(yaml) => {
-                            match serde_json::to_value(yaml) {
-                                Ok(json) => Some(json),
-                                Err(err) => {
-                                    error!("Error: Failed to convert YAML to JSON: {err}");
-                                    exit(EXIT_DSC_ERROR);
-                                }
-                            }
-                        },
-                        Err(err) => {
-                            error!("Error: Parameters are not valid JSON or YAML: {err}");
-                            exit(EXIT_INVALID_INPUT);
-                        }
-                    }
-                }
-            }
-        }
-    };
-
-    let context = &mut Context::new();
-    if let Some(parameters) = parameters {
-        for (key, value) in parameters.as_object().unwrap() {
-            // Note: the datatype is not used in the context, but it is required when validating parameters defined in the configuration
-            context.parameters.insert(key.clone(), (value.clone(), DataType::String));
+    if let Some(parameters) = new_parameters {
+        debug!("Adding parameters to context");
+        let parameters = get_parameters(&parameters);
+        for (key, value) in parameters.parameters {
+            context.parameters.insert(key, (value, None));
         }
     }
 
     if let Err(err) = configurator.set_context(&context) {
-        error!("Error: Parameter input failure: {err}");
+        error!("Error: Context input failure: {err}");
         exit(EXIT_INVALID_INPUT);
     }
 

@@ -11,16 +11,13 @@ use dsc_lib::{
             ConfigurationGetResult,
             ConfigurationSetResult,
             ConfigurationTestResult
-        }
+        }, parameters::Input
     },
     dscerror::DscError,
     dscresources::{
         command_resource::TraceLevel,
         dscresource::DscResource, invoke_result::{
-            GetResult,
-            SetResult,
-            TestResult,
-            ResolveResult,
+            GetResult, ResolveResult, SetResult, TestResult
         }, resource_manifest::ResourceManifest
     },
     util::parse_input_to_json,
@@ -479,4 +476,28 @@ pub fn set_dscconfigroot(config_path: &str) -> String
     env::set_var(DSC_CONFIG_ROOT, config_root_path);
 
     full_path.to_string_lossy().into_owned()
+}
+
+/// Gets the parameters from the input regardless if JSON or YAML.
+///
+/// # Arguments
+///
+/// * `input` - The input to parse
+///
+/// # Returns
+///
+/// The parsed parameters.
+pub fn get_parameters(input: &str) -> Input {
+    match serde_json::from_str::<Input>(input) {
+        Ok(value) => value,
+        Err(_) => {
+            match serde_yaml::from_str::<Input>(input) {
+                Ok(value) => value,
+                Err(err) => {
+                    error!("Error: Parameters are not valid JSON or YAML: {err}");
+                    exit(EXIT_INVALID_INPUT);
+                }
+            }
+        }
+    }
 }

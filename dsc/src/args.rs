@@ -45,7 +45,7 @@ pub enum SubCommand {
         #[clap(subcommand)]
         subcommand: ConfigSubCommand,
         #[clap(flatten)]
-        context: ContextArgs,
+        context_args: ContextArgs,
         // Used to inform when DSC is used as a group resource to modify it's output
         #[clap(long, hide = true)]
         as_group: bool,

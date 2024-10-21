@@ -5,7 +5,8 @@ use args::{Arguments, SubCommand};
 use atty::Stream;
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
-use dsc_lib::configure::context::Context;
+use dsc_lib::configure::{context::Context, parameters::Input};
+use util::get_parameters;
 use std::io::{self, Read};
 use std::process::exit;
 use sysinfo::{Process, RefreshKind, System, get_current_pid, ProcessRefreshKind};
@@ -69,29 +70,45 @@ fn main() {
             let mut cmd = Arguments::command();
             generate(shell, &mut cmd, "dsc", &mut io::stdout());
         },
-        SubCommand::Config { subcommand, context, as_group, as_include } => {
-            if let Some(context_content) = context.context {
-                let context = match serde_json::from_str::<Context>(&context_content) {
-                    Ok(context) => context,
-                    Err(err) => {
-                        error!("JSON Error: {err}");
-                        exit(util::EXIT_JSON_ERROR);
-                    }
-                };
+        SubCommand::Config { subcommand, context_args, as_group, as_include } => {
+            let mut parameters: Option<Input> = None;
+            if let Some(parameters_input) = context_args.parameters {
+                parameters = Some(get_parameters(&parameters_input));
             }
-            if let Some(file_name) = context.parameters_file {
+            else if let Some(file_name) = context_args.parameters_file {
                 info!("Reading parameters from file {file_name}");
                 match std::fs::read_to_string(&file_name) {
-                    Ok(parameters) => subcommand::config(&subcommand, &Some(parameters), &input, &as_group, &as_include),
+                    Ok(parameters_file_content) => {
+                        parameters = Some(get_parameters(&parameters_file_content));
+                    }
                     Err(err) => {
                         error!("Error: Failed to read parameters file '{file_name}': {err}");
                         exit(util::EXIT_INVALID_INPUT);
                     }
                 }
             }
-            else {
-                subcommand::config(&subcommand, &context.parameters, &input, &as_group, &as_include);
+
+            let mut context = if let Some(context_content) = context_args.context {
+                match serde_json::from_str::<Context>(&context_content) {
+                    Ok(context) => context,
+                    Err(err) => {
+                        error!("JSON Error: {err}");
+                        exit(util::EXIT_JSON_ERROR);
+                    }
+                }
             }
+            else {
+                Context::new()
+            };
+
+            // if explicit parameters were provided, we overlay them on top of the context parameters
+            if let Some(parameters) = parameters {
+                for (key, value) in parameters.parameters {
+                    context.parameters.insert(key, (value, None));
+                }
+            }
+
+            subcommand::config(&subcommand, &mut context, &input, &as_group, &as_include);
         },
         SubCommand::Resource { subcommand } => {
             subcommand::resource(&subcommand, &input);

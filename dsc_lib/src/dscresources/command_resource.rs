@@ -669,7 +669,7 @@ pub fn invoke_command(executable: &str, args: Option<Vec<String>>, input: Option
         .block_on(run_process_async(executable, args, input, cwd, env, exit_codes))
 }
 
-fn process_args(args: &Option<Vec<ArgKind>>, value: &str) -> Option<Vec<String>> {
+fn process_args(args: &Option<Vec<ArgKind>>, input: &str) -> Option<Vec<String>> {
     let Some(arg_values) = args else {
         debug!("No args to process");
         return None;
@@ -682,13 +682,16 @@ fn process_args(args: &Option<Vec<ArgKind>>, value: &str) -> Option<Vec<String>>
                 processed_args.push(s.clone());
             },
             ArgKind::Json { json_input_arg, mandatory } => {
-                if value.is_empty() && *mandatory != Some(true) {
+                if input.is_empty() && *mandatory != Some(true) {
                     continue;
                 }
 
                 processed_args.push(json_input_arg.clone());
-                processed_args.push(value.to_string());
+                processed_args.push(input.to_string());
             },
+            ArgKind::Context { arg } => {
+                processed_args.push(arg.clone());
+            }
         }
     }
 

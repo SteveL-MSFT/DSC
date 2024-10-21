@@ -14,7 +14,7 @@ use super::config_doc::{DataType, SecurityContextKind};
 pub struct Context {
     pub execution_type: ExecutionKind,
     pub outputs: HashMap<String, Value>, // this is used by the `reference()` function to retrieve output
-    pub parameters: HashMap<String, (Value, DataType)>,
+    pub parameters: HashMap<String, (Value, Option<DataType>)>,
     pub security_context: SecurityContextKind,
     pub variables: HashMap<String, Value>,
     #[serde(skip_serializing, skip_deserializing)]

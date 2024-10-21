@@ -494,7 +494,7 @@ impl Configurator {
         Ok(())
     }
 
-    fn set_parameters(&mut self, parameters_input: &HashMap<String, (Value, DataType)>, config: &Configuration) -> Result<(), DscError> {
+    fn set_parameters(&mut self, parameters_input: &HashMap<String, (Value, Option<DataType>)>, config: &Configuration) -> Result<(), DscError> {
         // set default parameters first
         let Some(parameters) = &config.parameters else {
             if parameters_input.is_empty() {
@@ -519,7 +519,7 @@ impl Configurator {
                     default_value.clone()
                 };
                 Configurator::validate_parameter_type(name, &value, &parameter.parameter_type)?;
-                self.context.parameters.insert(name.clone(), (value, parameter.parameter_type.clone()));
+                self.context.parameters.insert(name.clone(), (value, Some(parameter.parameter_type.clone())));
             }
         }
 
@@ -548,7 +548,7 @@ impl Configurator {
                     info!("Set parameter '{name}' to '{value}'");
                 }
 
-                self.context.parameters.insert(name.clone(), (value.clone(), constraint.parameter_type.clone()));
+                self.context.parameters.insert(name.clone(), (value.clone(), Some(constraint.parameter_type.clone())));
                 // also update the configuration with the parameter value
                 if let Some(parameters) = &mut self.config.parameters {
                     if let Some(parameter) = parameters.get_mut(name) {

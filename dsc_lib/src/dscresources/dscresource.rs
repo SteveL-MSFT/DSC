@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{configure::config_doc::ExecutionKind, dscresources::resource_manifest::Kind};
+use crate::{configure::{config_doc::ExecutionKind, context::Context}, dscresources::resource_manifest::Kind};
 use dscerror::DscError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -41,6 +41,9 @@ pub struct DscResource {
     pub require_adapter: Option<String>,
     /// The manifest of the resource.
     pub manifest: Option<Value>,
+    /// The configuration context.
+    #[serde(skip)]
+    pub context: Option<Context>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
@@ -88,6 +91,7 @@ impl DscResource {
             properties: Vec::new(),
             require_adapter: None,
             manifest: None,
+            context: None,
         }
     }
 }
