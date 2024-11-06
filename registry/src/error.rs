@@ -12,6 +12,9 @@ pub enum RegistryError {
     #[error("JSON: {0}")]
     Json(#[from] serde_json::Error),
 
+    #[error("Can not load file: {0}")]
+    LoadFile(#[from] std::io::Error),
+
     #[error("Registry: {0}")]
     Registry(#[from] registry::Error),
 
@@ -26,6 +29,9 @@ pub enum RegistryError {
 
     #[error("UTF-16 conversion of {0} failed due to interior NULL values")]
     Utf16Conversion(String),
+
+    #[error("Unsupported offline registry path: {0}")]
+    UnsupportedOfflineRegistryPath(String),
 
     #[error("Unsupported registry value data type")]
     UnsupportedValueDataType,
