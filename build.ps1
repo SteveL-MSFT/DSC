@@ -47,6 +47,7 @@ $filesForWindowsPackage = @(
     'registry.exe',
     'RunCommandOnSet.dsc.resource.json',
     'RunCommandOnSet.exe',
+    'servicedsc.exe',
     'windowspowershell.dsc.resource.json',
     'wmi.dsc.resource.json',
     'wmi.resource.ps1',
@@ -228,7 +229,7 @@ if (!$SkipBuild) {
     }
 
     # make sure dependencies are built first so clippy runs correctly
-    $windows_projects = @("pal", "registry", "reboot_pending", "wmi-adapter", "configurations/windows")
+    $windows_projects = @("pal", "registry", "reboot_pending", "wmi-adapter", "configurations/windows", 'resources/win_service')
     $macOS_projects = @("resources/brew")
     $linux_projects = @("resources/apt")
 

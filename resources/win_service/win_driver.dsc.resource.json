@@ -1,0 +1,58 @@
+{
+    "$schema": "https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2024/04/bundled/resource/manifest.json",
+    "type": "Microsoft.Windows/Driver",
+    "description": "Manage Windows drivers",
+    "tags": [
+        "Windows"
+    ],
+    "version": "0.1.0",
+    "get": {
+        "executable": "win_service",
+        "args": [
+            "--service-type",
+            "driver",
+            "get",
+            {
+                "jsonInputArg": "--input",
+                "mandatory": true
+            }
+        ]
+    },
+    "set": {
+        "executable": "win_service",
+        "args": [
+            "--service-type",
+            "driver",
+            "set",
+            {
+                "jsonInputArg": "--input",
+                "mandatory": true
+            }
+        ]
+    },
+    "export": {
+        "executable": "win_service",
+        "args": [
+            "--service-type",
+            "driver",
+            "export",
+            {
+                "jsonInputArg": "--input",
+                "mandatory": false
+            }
+        ]
+    },
+    "schema": {
+        "command": {
+            "executable": "win_service",
+            "args": [
+                "schema"
+            ]
+        }
+    },
+    "exitCodes": {
+        "0": "Success",
+        "1": "Invalid input",
+        "2": "Registry error"
+    }
+}

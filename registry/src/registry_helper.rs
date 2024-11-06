@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use registry::{Data, Hive, RegKey, Security, key, value};
+use std::path::PathBuf;
 use utfx::{U16CString, UCString};
 use crate::config::{Metadata, Registry, RegistryValueData};
 use crate::error::RegistryError;
@@ -10,6 +11,7 @@ pub struct RegistryHelper {
     config: Registry,
     hive: Hive,
     subkey: String,
+    system_root: Option<String>,
     what_if: bool,
 }
 
@@ -27,6 +29,7 @@ impl RegistryHelper {
                 config: registry,
                 hive,
                 subkey: subkey.to_string(),
+                system_root: None,
                 what_if: false
             }
         )
@@ -211,6 +214,10 @@ impl RegistryHelper {
     }
 
     fn open(&self, permission: Security) -> Result<(RegKey, &str), RegistryError> {
+        if let Some(system_root) = self.system_root.clone() {
+            return open_regkey_from_file(&self.config.key_path, &system_root, permission);
+        }
+
         open_regkey(&self.config.key_path, permission)
     }
 
@@ -293,6 +300,32 @@ fn open_regkey(path: &str, permission: Security) -> Result<(RegKey, &str), Regis
             Err(RegistryError::RegistryKeyNotFound(path.to_string()))
         },
         Err(e) => Err(RegistryError::RegistryKey(e)),
+    }
+}
+
+fn open_regkey_from_file<'a>(path: &'a str, system_root: &str, permission: Security) -> Result<(RegKey, &'a str), RegistryError> {
+    const SOFTWARE_HIVE_PATH: &str = r"\Windows\System32\config\SOFTWARE";
+    const SYSTEM_HIVE_PATH: &str = r"\Windows\System32\config\SYSTEM";
+    let software_hive_path = PathBuf::from(format!("{system_root}\\{SOFTWARE_HIVE_PATH}"));
+    let system_hive_path = PathBuf::from(format!("{system_root}\\{SYSTEM_HIVE_PATH}"));
+    let (hive, subkey) = get_hive_from_path(path)?;
+    let file_path: PathBuf = match hive {
+        Hive::LocalMachine => {
+            // determine if SOFTWARE or SYSTEM hive by getting the first element in th subkey
+            let subkey_name = subkey.split('\\').next().unwrap();
+            match subkey_name.to_ascii_uppercase().as_str() {
+                "SOFTWARE" => software_hive_path,
+                "SYSTEM" => system_hive_path,
+                _ => return Err(RegistryError::UnsupportedOfflineRegistryPath(path.to_string())),
+            }
+        },
+        Hive::ClassesRoot => software_hive_path,
+        Hive::CurrentConfig => system_hive_path,
+        _ => return Err(RegistryError::UnsupportedOfflineRegistryPath(hive.to_string())),
+    };
+    match Hive::load_file(file_path, permission) {
+        Ok(regkey) => Ok((regkey, subkey)),
+        Err(e) => Err(RegistryError::LoadFile(e)),
     }
 }
 
