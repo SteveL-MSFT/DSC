@@ -180,6 +180,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "offreg"
+version = "0.1.0"
+
+[[package]]
 name = "once_cell"
 version = "1.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -537,6 +541,7 @@ name = "win_service"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "offreg",
  "registry",
  "schemars",
  "serde",

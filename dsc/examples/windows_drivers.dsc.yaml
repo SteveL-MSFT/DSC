@@ -1,0 +1,7 @@
+# Example for exporting Windows drivers information
+$schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2024/04/config/document.json
+resources:
+- name: drivers
+  type: Microsoft.Windows/Driver
+  properties:
+    systemRoot: "D:"
