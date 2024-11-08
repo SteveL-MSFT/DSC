@@ -184,9 +184,6 @@ else {
 }
 
 if (!$SkipBuild) {
-    if (Test-Path $target) {
-        Remove-Item $target -Recurse -ErrorAction Ignore
-    }
     New-Item -ItemType Directory $target -ErrorAction Ignore > $null
 
     if ($UseCratesIO) {
@@ -223,7 +220,7 @@ if (!$SkipBuild) {
     }
 
     # make sure dependencies are built first so clippy runs correctly
-    $windows_projects = @("pal", "registry", "reboot_pending", "wmi-adapter", "configurations/windows", 'resources/win_service')
+    $windows_projects = @("pal", "registry", "reboot_pending", "wmi-adapter", "configurations/windows", 'offreg', 'resources/win_service')
     $macOS_projects = @("resources/brew")
     $linux_projects = @("resources/apt")
 

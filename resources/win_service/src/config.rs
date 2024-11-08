@@ -39,19 +39,19 @@ pub enum ErrorControl {
 #[serde(deny_unknown_fields)]
 pub struct Service {
     #[schemars(extend("x-keyProperty" = true))]
-    pub name: String,
+    pub name: Option<String>,
     #[serde(rename = "displayName", skip_deserializing)]
-    pub display_name: String,
+    pub display_name: Option<String>,
     #[serde(rename = "imagePath", skip_deserializing)]
-    pub image_path: String,
+    pub image_path: Option<String>,
     #[serde(skip_deserializing, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(rename = "serviceType", skip_deserializing)]
-    pub service_type: ServiceType,
+    pub service_type: Option<ServiceType>,
     #[serde(rename = "startType")]
-    pub start_type: StartupType,
+    pub start_type: Option<StartupType>,
     #[serde(rename = "errorControl")]
-    pub error_control: ErrorControl,
+    pub error_control: Option<ErrorControl>,
     #[serde(rename = "systemRoot", skip_serializing_if = "Option::is_none")]
     pub system_root: Option<String>,
 }

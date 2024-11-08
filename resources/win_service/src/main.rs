@@ -4,6 +4,7 @@ mod config;
 use args::{Arguments, ServiceType, SubCommand};
 use clap::Parser;
 use config::{Service, StartupType, ErrorControl};
+use offreg::*;
 use registry::{Data, Hive, RegKey, Security};
 use schemars::schema_for;
 use std::{path::Path, process::exit};
@@ -50,22 +51,8 @@ fn main() {
 fn open_registry(system_root: &Option<String>, permission: Security) -> RegKey {
     const SERVICES_REG_PATH: &str =r#"SYSTEM\CurrentControlSet\Services"#;
     if let Some(system_root) = system_root {
-        match Hive::load_file(
-            Path::new(format!("{system_root}\\Windows\\System32\\config\\SYSTEM").as_str()),
-            permission,
-        ) {
-            Ok(hive) => match hive.open(SERVICES_REG_PATH, permission) {
-                Ok(reg_key) => reg_key,
-                Err(err) => {
-                    error!("Could not open reg hive: {err}");
-                    exit(EXIT_REGISTRY_ERROR);
-                }
-            },
-            Err(err) => {
-                error!("Could not open reg file: {err}");
-                exit(EXIT_REGISTRY_ERROR);
-            }
-        }
+        let reg_file_path = format!("{system_root}\\Windows\\System32\\config\\SYSTEM");
+        debug!("Opening offline reg file hive: {reg_file_path}");
     } else {
         match Hive::LocalMachine.open(SERVICES_REG_PATH, permission) {
             Ok(reg_key) => reg_key,
@@ -93,7 +80,7 @@ fn export(service_type: ServiceType, service_input: &Option<Service>) {
                 continue;
             }
         };
-        service.name = subkey.to_string();
+        service.name = Some(subkey.to_string());
         let key = match subkey.open(Security::Read) {
             Ok(key) => key,
             Err(err) => {
@@ -109,25 +96,25 @@ fn export(service_type: ServiceType, service_input: &Option<Service>) {
                             if service_type != ServiceType::Driver {
                                 continue;
                             }
-                            config::ServiceType::KernelDriver
+                            Some(config::ServiceType::KernelDriver)
                         },
                         2 => {
                             if service_type != ServiceType::Driver {
                                 continue;
                             }
-                            config::ServiceType::FileSystemDriver
+                            Some(config::ServiceType::FileSystemDriver)
                         },
                         16 => {
                             if service_type != ServiceType::Service {
                                 continue;
                             }
-                            config::ServiceType::Win32OwnProcess
+                            Some(config::ServiceType::Win32OwnProcess)
                         },
                         32 => {
                             if service_type != ServiceType::Service {
                                 continue;
                             }
-                            config::ServiceType::Win32ShareProcess
+                            Some(config::ServiceType::Win32ShareProcess)
                         },
                         _ => {
                             debug!("Unknown service type: {reg_service_type} for {:?}", subkey);
@@ -146,10 +133,10 @@ fn export(service_type: ServiceType, service_input: &Option<Service>) {
         }
         if let Ok(display_name) = key.value("DisplayName") {
             // TODO: extract localized display name
-            service.display_name = display_name.to_string();
+            service.display_name = Some(display_name.to_string());
         }
         if let Ok(image_path) = key.value("ImagePath") {
-            service.image_path = image_path.to_string();
+            service.image_path = Some(image_path.to_string());
         }
         if let Ok(description) = key.value("Description") {
             // TODO: extract localized description
@@ -159,14 +146,14 @@ fn export(service_type: ServiceType, service_input: &Option<Service>) {
             match start_type {
                 Data::U32(start_type) => {
                     service.start_type = match start_type {
-                        0 => StartupType::Boot,
-                        1 => StartupType::System,
-                        2 => StartupType::Automatic,
-                        3 => StartupType::Demand,
-                        4 => StartupType::Disabled,
+                        0 => Some(StartupType::Boot),
+                        1 => Some(StartupType::System),
+                        2 => Some(StartupType::Automatic),
+                        3 => Some(StartupType::Demand),
+                        4 => Some(StartupType::Disabled),
                         _ => {
                             debug!("Unknown start type: {start_type} for {:?}", subkey);
-                            continue;
+                            None
                         },
                     };
                 },
@@ -183,13 +170,13 @@ fn export(service_type: ServiceType, service_input: &Option<Service>) {
             match error_control {
                 Data::U32(error_control) => {
                     service.error_control = match error_control {
-                        0 => ErrorControl::Ignore,
-                        1 => ErrorControl::Normal,
-                        2 => ErrorControl::Severe,
-                        3 => ErrorControl::Critical,
+                        0 => Some(ErrorControl::Ignore),
+                        1 => Some(ErrorControl::Normal),
+                        2 => Some(ErrorControl::Severe),
+                        3 => Some(ErrorControl::Critical),
                         _ => {
                             debug!("Unknown error control: {error_control} for {:?}", subkey);
-                            continue;
+                            None
                         },
                     };
                 },

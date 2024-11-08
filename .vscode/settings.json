@@ -3,6 +3,7 @@
         "./dsc/Cargo.toml",
         "./dsc_lib/Cargo.toml",
         "./dscecho/Cargo.toml",
+        "./offreg/Cargo.toml",
         "./osinfo/Cargo.toml",
         "./registry/Cargo.toml",
         "./resources/win_service/Cargo.toml",
