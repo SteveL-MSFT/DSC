@@ -5,6 +5,7 @@ mod args;
 mod delete;
 mod exist;
 mod exit_code;
+mod set_no_test;
 mod sleep;
 mod trace;
 mod whatif;
@@ -15,6 +16,7 @@ use schemars::schema_for;
 use crate::delete::Delete;
 use crate::exist::{Exist, State};
 use crate::exit_code::ExitCode;
+use crate::set_no_test::SetNoTest;
 use crate::sleep::Sleep;
 use crate::trace::Trace;
 use crate::whatif::WhatIf;
@@ -76,6 +78,9 @@ fn main() {
                 Schemas::ExitCode => {
                     schema_for!(ExitCode)
                 },
+                Schemas::SetNoTest => {
+                    schema_for!(SetNoTest)
+                },
                 Schemas::Sleep => {
                     schema_for!(Sleep)
                 },
@@ -87,6 +92,16 @@ fn main() {
                 },
             };
             serde_json::to_string(&schema).unwrap()
+        },
+        SubCommand::SetNoTest { input } => {
+            let set_no_test = match serde_json::from_str::<SetNoTest>(&input) {
+                Ok(set_no_test) => set_no_test,
+                Err(err) => {
+                    eprintln!("Error JSON does not match schema: {err}");
+                    std::process::exit(1);
+                }
+            };
+            serde_json::to_string(&set_no_test).unwrap()
         },
         SubCommand::Sleep { input } => {
             let sleep = match serde_json::from_str::<Sleep>(&input) {

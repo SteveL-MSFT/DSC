@@ -8,6 +8,7 @@ pub enum Schemas {
     Delete,
     Exist,
     ExitCode,
+    SetNoTest,
     Sleep,
     Trace,
     WhatIf,
@@ -45,6 +46,12 @@ pub enum SubCommand {
     Schema {
         #[clap(name = "subcommand", short, long, help = "The subcommand to get the schema for")]
         subcommand: Schemas,
+    },
+
+    #[clap(name = "set-no-test", about = "Set without test implemented")]
+    SetNoTest {
+        #[clap(name = "echo", short, long, help = "The echo string to return")]
+        input: String,
     },
 
     #[clap(name = "sleep", about = "Sleep for a specified number of seconds")]
