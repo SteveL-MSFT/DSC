@@ -34,6 +34,15 @@
             "program": "${workspaceFolder}/sshdconfig/target/debug/sshdconfig.exe",
             "args": ["get"],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug win_service",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/resources/win_service/target/debug/win_service.exe",
+            "args": ["--service-type", "driver", "export", "--input", "{\"systemRoot\":\"d:\"}"],
+            "cwd": "${workspaceFolder}"
         }
+
     ]
 }

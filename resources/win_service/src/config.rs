@@ -47,6 +47,7 @@ pub struct Service {
     #[serde(skip_deserializing, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(rename = "serviceType", skip_deserializing)]
+    #[allow(clippy::struct_field_names)]
     pub service_type: Option<ServiceType>,
     #[serde(rename = "startType")]
     pub start_type: Option<StartupType>,
