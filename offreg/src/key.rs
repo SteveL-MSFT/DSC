@@ -40,6 +40,7 @@ pub struct OfflineRegistryValue {
 #[allow(clippy::module_name_repetitions)]
 pub struct OfflineRegistryKey {
     pub name: String,
+    hive: ORHKEY,
     handle: ORHKEY,
 }
 
@@ -50,9 +51,10 @@ impl Display for OfflineRegistryKey {
 }
 
 impl OfflineRegistryKey {
-    pub fn new(name: &str, handle: ORHKEY) -> Self {
+    pub fn new(name: &str, hive: ORHKEY, handle: ORHKEY) -> Self {
         Self {
             name: name.to_string(),
+            hive,
             handle,
         }
     }
@@ -85,7 +87,7 @@ impl OfflineRegistryKey {
         if result != 0 {
             Err(OfflineRegistryError::Windows(Error::from_hresult(HRESULT::from_win32(result))))
         } else {
-            Ok(OfflineRegistryKey::new(subkey_name, subkey_handle))
+            Ok(OfflineRegistryKey::new(subkey_name, self.hive, subkey_handle))
         }
     }
 
@@ -103,8 +105,8 @@ impl OfflineRegistryKey {
         let mut subkeys = Vec::<OfflineRegistryKey>::new();
         let mut index = 0;
         loop {
-            let mut subkey_name = [0u16; 256];
-            let mut subkey_name_length = u32::try_from(subkey_name.len()).unwrap_or(256);
+            let mut subkey_name_length: u32 = 256;
+            let mut subkey_name = vec![0u16; subkey_name_length as usize];
             let result = unsafe {
                 OfflineRegistry::OREnumKey(
                     self.handle,
@@ -143,11 +145,11 @@ impl OfflineRegistryKey {
         let mut values = Vec::<OfflineRegistryValue>::new();
         let mut index = 0;
         loop {
-            let mut value_name = [0u16; 256];
-            let mut value_name_length = u32::try_from(value_name.len()).unwrap_or(256);
+            let mut value_name_length: u32 = 256;
+            let mut value_name = vec![0u16; value_name_length as usize];
             let mut value_type = 0;
-            let mut value_data = [0u8; 1024];
-            let mut value_data_length = u32::try_from(value_data.len()).unwrap_or(1024);
+            let mut value_data_length: u32 = 1024;
+            let mut value_data = vec![0u8; value_data_length as usize];
             let result = unsafe {
                 OfflineRegistry::OREnumValue(
                     self.handle,
@@ -188,8 +190,8 @@ impl OfflineRegistryKey {
     /// Returns an error if the value could not be retrieved.
     pub fn get_value(&self, value_name: &str) -> Result<OfflineRegistryValue, OfflineRegistryError> {
         let mut value_type = 0;
-        let mut value_data = [0u8; 1024];
-        let mut value_data_length = u32::try_from(value_data.len()).unwrap_or(1024);
+        let mut value_data_length = 1024;
+        let mut value_data = vec![0u8; value_data_length as usize];
         let mut name: Vec<u16> = value_name.encode_utf16().collect();
         name.push(0);
         let result = unsafe {
@@ -214,17 +216,24 @@ impl OfflineRegistryKey {
 }
 
 fn convert_to_value_data(value_type: u32, value_data: &[u8]) -> OfflineRegistryValueData {
+    let mut unicode_data: &[u16] = unsafe {
+        std::slice::from_raw_parts(value_data.as_ptr() as *const u16, value_data.len() / 2)
+    };
+    // remove trailing null
+    if unicode_data.len() > 0 && unicode_data[unicode_data.len() - 1] == 0 {
+        unicode_data = &unicode_data[..unicode_data.len() - 1];
+    }
     match value_type {
         0 => OfflineRegistryValueData::None,
-        1 => OfflineRegistryValueData::String(String::from_utf8_lossy(value_data).to_string()),
-        2 => OfflineRegistryValueData::ExpandString(String::from_utf8_lossy(value_data).to_string()),
+        1 => OfflineRegistryValueData::String(String::from_utf16_lossy(unicode_data).to_string()),
+        2 => OfflineRegistryValueData::ExpandString(String::from_utf16_lossy(unicode_data).to_string()),
         4 => OfflineRegistryValueData::Dword(u32::from_le_bytes([value_data[0], value_data[1], value_data[2], value_data[3]])),
         7 => {
             let mut multi_string = Vec::<String>::new();
             let mut start = 0;
             for i in 0..value_data.len() {
-                if value_data[i] == 0 {
-                    multi_string.push(String::from_utf8_lossy(&value_data[start..i]).to_string());
+                if unicode_data[i] == 0 {
+                    multi_string.push(String::from_utf16_lossy(&unicode_data[start..i]).to_string());
                     start = i + 1;
                 }
             }
@@ -232,11 +241,5 @@ fn convert_to_value_data(value_type: u32, value_data: &[u8]) -> OfflineRegistryV
         }
         11 => OfflineRegistryValueData::Qword(u64::from_le_bytes([value_data[0], value_data[1], value_data[2], value_data[3], value_data[4], value_data[5], value_data[6], value_data[7]])),
         _ => OfflineRegistryValueData::Binary(value_data.to_vec()),
-    }
-}
-
-impl Drop for OfflineRegistryKey {
-    fn drop(&mut self) {
-        self.close();
     }
 }

@@ -72,21 +72,15 @@ impl OfflineRegistryHive {
         }
 
         debug!("Opening key: {key_path}");
-        let mut key_handle = ptr::null_mut();
+        let mut key_handle: ORHKEY = ptr::null_mut();
         let mut path: Vec<u16> = key_path.encode_utf16().collect();
         path.push(0);
         let result = unsafe { OfflineRegistry::OROpenKey(self.hive, path.as_ptr(), &mut key_handle) };
         if result != 0 {
             Err(OfflineRegistryError::Windows(Error::from_hresult(HRESULT::from_win32(result))))
         } else {
-            Ok(OfflineRegistryKey::new(key_path, key_handle))
+            Ok(OfflineRegistryKey::new(key_path, self.hive, key_handle))
         }
-    }
-}
-
-impl Drop for OfflineRegistryHive {
-    fn drop(&mut self) {
-        self.close();
     }
 }
 
