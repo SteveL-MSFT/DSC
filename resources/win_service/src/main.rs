@@ -113,11 +113,15 @@ fn enum_offline_registry(service_type: &ServiceType, reg_key: &OfflineRegistryKe
                                 ServiceType::Driver => {
                                     if converted_service_type == config::ServiceType::KernelDriver || converted_service_type == config::ServiceType::FileSystemDriver {
                                         service.service_type = Some(converted_service_type);
+                                    } else {
+                                        continue;
                                     }
                                 },
                                 ServiceType::Service => {
                                     if converted_service_type == config::ServiceType::Win32OwnProcess || converted_service_type == config::ServiceType::Win32ShareProcess {
                                         service.service_type = Some(converted_service_type);
+                                    } else {
+                                        continue;
                                     }
                                 }
                             }
