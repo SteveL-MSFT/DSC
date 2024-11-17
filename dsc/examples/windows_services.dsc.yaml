@@ -1,5 +1,8 @@
 # Example for exporting Windows services information
 $schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2024/04/config/document.json
+metadata:
+  Microsoft.DSC:
+    securityContext: Elevated
 resources:
 - name: services
   type: Microsoft.Windows/Service
