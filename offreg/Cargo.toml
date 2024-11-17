@@ -3,6 +3,16 @@ name = "offreg"
 version = "0.1.0"
 edition = "2021"
 
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+strip = true
+# optimize for size
+opt-level = 2
+# enable link time optimization to remove dead code
+lto = true
+
 [dependencies]
 thiserror = "2.0.3"
 tracing = "0.1.26"
