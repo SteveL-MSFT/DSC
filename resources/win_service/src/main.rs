@@ -12,7 +12,7 @@ use tracing::{debug, error};
 use tracing_subscriber::{filter::LevelFilter, prelude::__tracing_subscriber_SubscriberExt, EnvFilter, Layer};
 const EXIT_INVALID_INPUT: i32 = 1;
 const EXIT_REGISTRY_ERROR: i32 = 2;
-const SERVICES_REG_PATH: &str =r"SYSTEM\ControlSet01\Services";
+const SERVICES_REG_PATH: &str = r"SYSTEM\CurrentControlSet\Services";
 const OFFLINE_SERVICES_REG_PATH: &str = r"ControlSet001\Services";
 
 fn main() {
@@ -83,9 +83,14 @@ fn open_registry(permission: Security) -> RegKey {
 fn export(service_type: &ServiceType, service_input: &Option<Service>) {
     if let Some(service_input) = service_input {
         if let Some(system_root) = &service_input.system_root {
-            let reg_key = open_offline_registry(system_root);
-            enum_offline_registry(service_type, &reg_key);
-            return;
+            // only use offline registry if the system root is different from the current system root
+            if let Some(system_drive) = std::env::var("SYSTEMDRIVE").ok() {
+                if system_drive.to_lowercase() != system_root.to_lowercase() {
+                    let reg_key = open_offline_registry(system_root);
+                    enum_offline_registry(service_type, &reg_key);
+                    return;
+                }
+            }
         }
     }
 
@@ -263,11 +268,15 @@ fn enum_registry(service_type: &ServiceType, reg_key: &RegKey) {
                         ServiceType::Driver => {
                             if converted_service_type == config::ServiceType::KernelDriver || converted_service_type == config::ServiceType::FileSystemDriver {
                                 service.service_type = Some(converted_service_type);
+                            } else {
+                                continue;
                             }
                         },
                         ServiceType::Service => {
                             if converted_service_type == config::ServiceType::Win32OwnProcess || converted_service_type == config::ServiceType::Win32ShareProcess {
                                 service.service_type = Some(converted_service_type);
+                            } else {
+                                continue;
                             }
                         }
                     }

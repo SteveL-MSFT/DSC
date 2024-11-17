@@ -4,4 +4,4 @@ resources:
 - name: services
   type: Microsoft.Windows/Service
   properties:
-    systemRoot: "D:"
+    systemRoot: "[systemRoot()]"
