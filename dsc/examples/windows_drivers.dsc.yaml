@@ -4,4 +4,4 @@ resources:
 - name: drivers
   type: Microsoft.Windows/Driver
   properties:
-    systemRoot: "D:"
+    systemRoot: "[systemRoot()]"
