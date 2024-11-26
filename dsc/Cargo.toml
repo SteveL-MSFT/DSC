@@ -27,6 +27,7 @@ serde_yaml = { version = "0.9" }
 syntect = { version = "5.0", features = ["default-fancy"], default-features = false }
 sysinfo = { version = "0.32" }
 thiserror = "1.0"
+tokio = { version = "1.41", features = ["io-std"] }
 tracing = { version = "0.1.37" }
 tracing-subscriber = { version = "0.3", features = ["ansi", "env-filter", "json"] }
 tracing-indicatif = { version = "0.3" }

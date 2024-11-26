@@ -486,6 +486,7 @@ dependencies = [
  "syntect",
  "sysinfo",
  "thiserror",
+ "tokio",
  "tracing",
  "tracing-indicatif",
  "tracing-subscriber",

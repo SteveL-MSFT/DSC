@@ -236,13 +236,13 @@ fn initialize_config_root(path: &Option<String>) -> Option<String> {
 }
 
 #[allow(clippy::too_many_lines)]
-pub fn config(subcommand: &ConfigSubCommand, parameters: &Option<String>, mounted_path: &Option<String>, stdin: &Option<String>, as_group: &bool, as_include: &bool) {
+pub fn config(subcommand: &ConfigSubCommand, parameters: &Option<String>, mounted_path: &Option<String>, as_group: &bool, as_include: &bool) {
     let (new_parameters, json_string) = match subcommand {
-        ConfigSubCommand::Get { document, path, .. } |
-        ConfigSubCommand::Set { document, path, .. } |
-        ConfigSubCommand::Test { document, path, .. } |
-        ConfigSubCommand::Validate { document, path, .. } |
-        ConfigSubCommand::Export { document, path, .. } => {
+        ConfigSubCommand::Get { document, path, stdin, .. } |
+        ConfigSubCommand::Set { document, path, stdin, .. } |
+        ConfigSubCommand::Test { document, path, stdin, .. } |
+        ConfigSubCommand::Validate { document, path, stdin, .. } |
+        ConfigSubCommand::Export { document, path, stdin, .. } => {
             let new_path = initialize_config_root(path);
             let input = get_input(document, stdin, &new_path);
             if *as_include {
@@ -258,7 +258,7 @@ pub fn config(subcommand: &ConfigSubCommand, parameters: &Option<String>, mounte
                 (None, input)
             }
         },
-        ConfigSubCommand::Resolve { document, path, .. } => {
+        ConfigSubCommand::Resolve { document, path, stdin, .. } => {
             let new_path = initialize_config_root(path);
             let input = get_input(document, stdin, &new_path);
             let (new_parameters, config_json) = match get_contents(&input) {
@@ -344,7 +344,7 @@ pub fn config(subcommand: &ConfigSubCommand, parameters: &Option<String>, mounte
         ConfigSubCommand::Test { format, as_get, as_config, .. } => {
             config_test(&mut configurator, format, as_group, as_get, as_config);
         },
-        ConfigSubCommand::Validate { document, path, format} => {
+        ConfigSubCommand::Validate { document, path, stdin, format} => {
             let mut result = ValidateResult {
                 valid: true,
                 reason: None,
@@ -507,7 +507,7 @@ pub fn validate_config(config: &Configuration) -> Result<(), DscError> {
 }
 
 #[allow(clippy::too_many_lines)]
-pub fn resource(subcommand: &ResourceSubCommand, stdin: &Option<String>) {
+pub fn resource(subcommand: &ResourceSubCommand) {
     let mut dsc = match DscManager::new() {
         Ok(dsc) => dsc,
         Err(err) => {
@@ -528,7 +528,7 @@ pub fn resource(subcommand: &ResourceSubCommand, stdin: &Option<String>) {
             dsc.find_resources(&[resource.to_string()]);
             resource_command::export(&mut dsc, resource, format);
         },
-        ResourceSubCommand::Get { resource, input, path, all, format } => {
+        ResourceSubCommand::Get { resource, input, path, stdin, all, format } => {
             dsc.find_resources(&[resource.to_string()]);
             if *all { resource_command::get_all(&dsc, resource, format); }
             else {
@@ -536,17 +536,17 @@ pub fn resource(subcommand: &ResourceSubCommand, stdin: &Option<String>) {
                 resource_command::get(&dsc, resource, parsed_input, format);
             }
         },
-        ResourceSubCommand::Set { resource, input, path, format } => {
+        ResourceSubCommand::Set { resource, input, path, stdin, format } => {
             dsc.find_resources(&[resource.to_string()]);
             let parsed_input = get_input(input, stdin, path);
             resource_command::set(&dsc, resource, parsed_input, format);
         },
-        ResourceSubCommand::Test { resource, input, path, format } => {
+        ResourceSubCommand::Test { resource, input, path, stdin, format } => {
             dsc.find_resources(&[resource.to_string()]);
             let parsed_input = get_input(input, stdin, path);
             resource_command::test(&dsc, resource, parsed_input, format);
         },
-        ResourceSubCommand::Delete { resource, input, path } => {
+        ResourceSubCommand::Delete { resource, input, path, stdin } => {
             dsc.find_resources(&[resource.to_string()]);
             let parsed_input = get_input(input, stdin, path);
             resource_command::delete(&dsc, resource, parsed_input);

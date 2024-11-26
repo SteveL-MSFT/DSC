@@ -30,11 +30,13 @@ use path_absolutize::Absolutize;
 use schemars::{schema_for, schema::RootSchema};
 use serde::Deserialize;
 use serde_json::Value;
-use std::collections::HashMap;
-use std::env;
-use std::io::IsTerminal;
-use std::path::Path;
-use std::process::exit;
+use std::{
+    collections::HashMap,
+    env,
+    io::{self, IsTerminal, Read},
+    path::Path,
+    process::exit,
+};
 use syntect::{
     easy::HighlightLines,
     highlighting::ThemeSet,
@@ -293,7 +295,7 @@ pub fn write_output(json: &str, format: &Option<OutputFormat>) {
 
 #[allow(clippy::too_many_lines)]
 pub fn enable_tracing(trace_level_arg: &Option<TraceLevel>, trace_format_arg: &Option<TraceFormat>) {
-    
+
     let mut policy_is_used = false;
     let mut tracing_setting = TracingSetting::default();
 
@@ -453,59 +455,53 @@ pub fn validate_json(source: &str, schema: &Value, json: &Value) -> Result<(), D
     Ok(())
 }
 
-pub fn get_input(input: &Option<String>, stdin: &Option<String>, path: &Option<String>) -> String {
-    let value = match (input, stdin, path) {
-        (Some(_), Some(_), None) | (None, Some(_), Some(_)) => {
-            error!("Error: Cannot specify both stdin and --document or --path");
-            exit(EXIT_INVALID_ARGS);
-        },
-        (Some(input), None, None) => {
-            debug!("Reading input from command line parameter");
-
-            // see if user accidentally passed in a file path
-            if Path::new(input).exists() {
-                error!("Error: Document provided is a file path, use --path instead");
+pub fn get_input(input: &Option<String>, stdin: &bool, path: &Option<String>) -> String {
+    // clap will resolve conflicts, so conflict resolution doesn't need to be handled here
+    let value = if *stdin {
+        debug!("Reading input from stdin");
+        let mut input = String::new();
+        let stdin = io::stdin();
+        let mut handle = stdin.lock();
+        match handle.read_to_string(&mut input) {
+            Ok(_) => {
+                input.clone()
+            },
+            Err(err) => {
+                error!("Error: Failed to read input from stdin: {err}");
                 exit(EXIT_INVALID_INPUT);
             }
-            input.clone()
-        },
-        (None, Some(stdin), None) => {
-            debug!("Reading input from stdin");
-            stdin.clone()
-        },
-        (None, None, Some(path)) => {
-            debug!("Reading input from file {}", path);
-            match std::fs::read_to_string(path) {
-                Ok(input) => {
-                    input.clone()
-                },
-                Err(err) => {
-                    error!("Error: Failed to read input file: {err}");
-                    exit(EXIT_INVALID_INPUT);
-                }
+        }
+    } else if let Some(input) = input {
+        debug!("Reading input from command line parameter");
+        // see if user accidentally passed in a file path
+        if Path::new(input).exists() {
+            error!("Error: Document provided is a file path, use --path instead");
+            exit(EXIT_INVALID_INPUT);
+        }
+        input.clone()
+    } else if let Some(path) = path {
+        debug!("Reading input from file {path}");
+        match std::fs::read_to_string(path) {
+            Ok(input) => {
+                input.clone()
+            },
+            Err(err) => {
+                error!("Error: Failed to read input file: {err}");
+                exit(EXIT_INVALID_INPUT);
             }
-        },
-        (None, None, None) => {
-            debug!("No input provided via stdin, file, or command line");
-            return String::new();
-        },
-        _default => {
-            /* clap should handle these cases via conflicts_with so this should not get reached */
-            error!("Error: Invalid input");
-            exit(EXIT_INVALID_ARGS);
         }
     };
 
     if value.trim().is_empty() {
-        error!("Provided input is empty");
-        exit(EXIT_INVALID_INPUT);
-    }
-
-    match parse_input_to_json(&value) {
-        Ok(json) => json,
-        Err(err) => {
-            error!("Error: Invalid JSON or YAML: {err}");
-            exit(EXIT_INVALID_INPUT);
+        info!("Provided input is empty");
+        String::new()
+    } else {
+        match parse_input_to_json(&value) {
+            Ok(json) => json,
+            Err(err) => {
+                error!("Error: Invalid JSON or YAML: {err}");
+                exit(EXIT_INVALID_INPUT);
+            }
         }
     }
 }

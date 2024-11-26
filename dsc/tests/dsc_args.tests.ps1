@@ -148,22 +148,8 @@ resources:
         $LASTEXITCODE | Should -Be 2
     }
 
-    It 'stdin and --document cannot be used together' {
-        '{ "foo": true }' | dsc config get --document 1 2> $TestDrive/error.txt
-        $err = Get-Content $testdrive/error.txt -Raw
-        $err.Length | Should -Not -Be 0
-        $LASTEXITCODE | Should -Be 1
-    }
-
-    It 'stdin and --path cannot be used together' {
-        '{ "foo": true }' | dsc config get --path foo.json 2> $TestDrive/error.txt
-        $err = Get-Content $testdrive/error.txt -Raw
-        $err.Length | Should -Not -Be 0
-        $LASTEXITCODE | Should -Be 1
-    }
-
     It 'stdin, --document and --path cannot be used together' {
-        '{ "foo": true }' | dsc config get --document 1 --path foo.json 2> $TestDrive/error.txt
+        dsc config get --document 1 --path foo.json 2> $TestDrive/error.txt
         $err = Get-Content $testdrive/error.txt -Raw
         $err.Length | Should -Not -Be 0
         $LASTEXITCODE | Should -Be 2
@@ -313,5 +299,28 @@ resources:
         dsc config --system-root /invalid/path get -p "$PSScriptRoot/../examples/groups.dsc.yaml" 2> $TestDrive/tracing.txt
         $LASTEXITCODE | Should -Be 1
         "$TestDrive/tracing.txt" | Should -FileContentMatchExactly "Target path '/invalid/path' does not exist"
+    }
+
+    It 'Handle STDIN being redirected but not used' {
+        $inputJson = '{"output": "hello"}'
+        $processStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $processStartInfo.FileName = 'dsc'
+        $processStartInfo.ArgumentList.Add("resource")
+        $processStartInfo.ArgumentList.Add("get")
+        $processStartInfo.ArgumentList.Add("--resource")
+        $processStartInfo.ArgumentList.Add("Microsoft.DSC.Debug/Echo")
+        $processStartInfo.ArgumentList.Add("--input")
+        $processStartInfo.ArgumentList.Add($inputJson)
+        $processStartInfo.RedirectStandardInput = $true
+        $processStartInfo.RedirectStandardOutput = $true
+        $processStartInfo.RedirectStandardError = $true
+        $process = [System.Diagnostics.Process]::new()
+        $process.StartInfo = $processStartInfo
+        $process.Start() | Out-Null
+        $process.WaitForExit()
+        $stderr = $process.StandardError.ReadToEnd()
+        write-verbose -verbose $stderr
+        $process.ExitCode | Should -Be 0
+        $process.StandardOutput.ReadToEnd().Trim() | Should -Be '{"actualState":{"output":"hello"}}'
     }
 }

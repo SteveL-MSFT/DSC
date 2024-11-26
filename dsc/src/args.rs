@@ -78,8 +78,10 @@ pub enum ConfigSubCommand {
     Get {
         #[clap(short = 'd', long, help = "The document to pass to the configuration or resource", conflicts_with = "path")]
         document: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "document")]
+        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The document is passed via STDIN", conflicts_with = "document")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     },
@@ -87,8 +89,10 @@ pub enum ConfigSubCommand {
     Set {
         #[clap(short = 'd', long, help = "The document to pass to the configuration or resource", conflicts_with = "path")]
         document: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "document")]
+        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The document is passed via STDIN", conflicts_with = "document")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
         #[clap(short = 'w', long, help = "Run as a what-if operation instead of executing the configuration or resource")]
@@ -98,8 +102,10 @@ pub enum ConfigSubCommand {
     Test {
         #[clap(short = 'd', long, help = "The document to pass to the configuration or resource", conflicts_with = "path")]
         document: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "document")]
+        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The document is passed via STDIN", conflicts_with = "document")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
         // Used by Assertion resource to return `test` result as a `get` result
@@ -113,8 +119,10 @@ pub enum ConfigSubCommand {
     Validate {
         #[clap(short = 'd', long, help = "The document to pass to the configuration or resource", conflicts_with = "path")]
         document: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "document")]
+        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The document is passed via STDIN", conflicts_with = "document")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     },
@@ -122,8 +130,10 @@ pub enum ConfigSubCommand {
     Export {
         #[clap(short = 'd', long, help = "The document to pass to the configuration or resource", conflicts_with = "path")]
         document: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "document")]
+        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The document is passed via STDIN", conflicts_with = "document")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     },
@@ -131,8 +141,10 @@ pub enum ConfigSubCommand {
     Resolve {
         #[clap(short = 'd', long, help = "The document to pass to the configuration or resource", conflicts_with = "path")]
         document: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "document")]
+        #[clap(short = 'p', long, help = "The path to a file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The document is passed via STDIN", conflicts_with = "document")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     }
@@ -162,8 +174,10 @@ pub enum ResourceSubCommand {
         resource: String,
         #[clap(short, long, help = "The input to pass to the resource as JSON or YAML", conflicts_with = "path")]
         input: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "input")]
+        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The input is passed via STDIN", conflicts_with = "input")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     },
@@ -173,8 +187,10 @@ pub enum ResourceSubCommand {
         resource: String,
         #[clap(short, long, help = "The input to pass to the resource as JSON or YAML", conflicts_with = "path")]
         input: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "input")]
+        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The input is passed via STDIN", conflicts_with = "input")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     },
@@ -184,8 +200,10 @@ pub enum ResourceSubCommand {
         resource: String,
         #[clap(short, long, help = "The input to pass to the resource as JSON or YAML", conflicts_with = "path")]
         input: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "input")]
+        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The input is passed via STDIN", conflicts_with = "input")]
+        stdin: bool,
         #[clap(short = 'f', long, help = "The output format to use")]
         format: Option<OutputFormat>,
     },
@@ -195,8 +213,10 @@ pub enum ResourceSubCommand {
         resource: String,
         #[clap(short, long, help = "The input to pass to the resource as JSON or YAML", conflicts_with = "path")]
         input: Option<String>,
-        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "input")]
+        #[clap(short = 'p', long, help = "The path to a JSON or YAML file used as input to the configuration or resource", conflicts_with = "stdin")]
         path: Option<String>,
+        #[clap(short = 's', long, help = "The input is passed via STDIN", conflicts_with = "input")]
+        stdin: bool,
     },
     #[clap(name = "schema", about = "Get the JSON schema for a resource", arg_required_else_help = true)]
     Schema {
