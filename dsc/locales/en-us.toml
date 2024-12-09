@@ -1,0 +1,16 @@
+_version = 1
+
+[main]
+currentPid = "Current process id"
+failedCtrlCHandler = "Failed to set Ctrl-C handler"
+failedGetCurrentPid = "Could not get current process id"
+failedGetCurrentProcess = "Could not get current process"
+failedReadingParametersFile = "Failed to read parameters file"
+failedTerminatingProcess = "Failed to terminate process"
+foundProcesses = "Found processes"
+generatingCompleter = "Generating completion script for"
+readingParametersFile = "Reading parameters from file"
+receivedCtrlC = "Ctrl-C received"
+runningVersion = "Running dsc"
+terminatingProcess = "Terminating process"
+terminatingSubprocesses = "Terminating subprocesses of process"

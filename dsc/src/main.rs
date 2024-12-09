@@ -4,6 +4,7 @@
 use args::{Args, SubCommand};
 use clap::{CommandFactory, Parser};
 use clap_complete::generate;
+use rust_i18n::{i18n, t};
 use std::io;
 use std::process::exit;
 use sysinfo::{Process, RefreshKind, System, get_current_pid, ProcessRefreshKind};
@@ -21,6 +22,8 @@ pub mod subcommand;
 pub mod tablewriter;
 pub mod util;
 
+i18n!("locales", fallback = "en-us");
+
 fn main() {
     #[cfg(debug_assertions)]
     check_debug();
@@ -29,28 +32,28 @@ fn main() {
     check_store();
 
     if ctrlc::set_handler(ctrlc_handler).is_err() {
-        error!("Error: Failed to set Ctrl-C handler");
+        error!("{}", t!("main.failedCtrlCHandler"));
     }
 
     let args = Args::parse();
 
     util::enable_tracing(&args.trace_level, &args.trace_format);
 
-    debug!("Running dsc {}", env!("CARGO_PKG_VERSION"));
+    debug!("{} {}", t!("main.runningVersion"), env!("CARGO_PKG_VERSION"));
 
     match args.subcommand {
         SubCommand::Completer { shell } => {
-            info!("Generating completion script for {:?}", shell);
+            info!("{} {:?}", t!("main.generatingCompleter"), shell);
             let mut cmd = Args::command();
             generate(shell, &mut cmd, "dsc", &mut io::stdout());
         },
         SubCommand::Config { subcommand, parameters, parameters_file, as_group, as_include } => {
             if let Some(file_name) = parameters_file {
-                info!("Reading parameters from file {file_name}");
+                info!("{} {file_name}", t!("main.readingParametersFile"));
                 match std::fs::read_to_string(&file_name) {
                     Ok(parameters) => subcommand::config(&subcommand, &Some(parameters), &as_group, &as_include),
                     Err(err) => {
-                        error!("Error: Failed to read parameters file '{file_name}': {err}");
+                        error!("{} '{file_name}': {err}", t!("main.failedReadingParametersFile"));
                         exit(util::EXIT_INVALID_INPUT);
                     }
                 }
@@ -67,7 +70,7 @@ fn main() {
             let json = match serde_json::to_string(&schema) {
                 Ok(json) => json,
                 Err(err) => {
-                    error!("JSON Error: {err}");
+                    error!("JSON: {err}");
                     exit(util::EXIT_JSON_ERROR);
                 }
             };
@@ -79,18 +82,18 @@ fn main() {
 }
 
 fn ctrlc_handler() {
-    warn!("Ctrl-C received");
+    warn!("{}", t!("main.receivedCtrlC"));
 
     // get process tree for current process and terminate all processes
     let sys = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-    info!("Found {} processes", sys.processes().len());
+    info!("{}: {}", t!("main.foundProcesses"), sys.processes().len());
     let Ok(current_pid) = get_current_pid() else {
-        error!("Could not get current process id");
+        error!("{}", t!("main.failedGetCurrentPid"));
         exit(util::EXIT_CTRL_C);
     };
-    info!("Current process id: {}", current_pid);
+    info!("{}: {}", t!("main.currentPid"), current_pid);
     let Some(current_process) = sys.process(current_pid) else {
-        error!("Could not get current process");
+        error!("{}", t!("main.failedGetCurrentProcess"));
         exit(util::EXIT_CTRL_C);
     };
 
@@ -99,14 +102,14 @@ fn ctrlc_handler() {
 }
 
 fn terminate_subprocesses(sys: &System, process: &Process) {
-    info!("Terminating subprocesses of process {:?} {}", process.name(), process.pid());
+    info!("{}: {:?} {}", t!("main.terminatingSubprocesses"), process.name(), process.pid());
     for subprocess in sys.processes().values().filter(|p| p.parent().map_or(false, |parent| parent == process.pid())) {
         terminate_subprocesses(sys, subprocess);
     }
 
-    info!("Terminating process {:?} {}", process.name(), process.pid());
+    info!("{}: {:?} {}", t!("main.terminatingProcess"), process.name(), process.pid());
     if !process.kill() {
-        error!("Failed to terminate process {:?} {}", process.name(), process.pid());
+        error!("{}: {:?} {}", t!("main.failedTerminatingProcess"), process.name(), process.pid());
     }
 }
 
