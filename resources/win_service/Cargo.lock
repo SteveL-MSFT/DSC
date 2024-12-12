@@ -183,6 +183,7 @@ dependencies = [
 name = "offreg"
 version = "0.1.0"
 dependencies = [
+ "registry",
  "thiserror 2.0.3",
  "tracing",
  "windows-result",

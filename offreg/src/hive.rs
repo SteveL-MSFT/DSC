@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use core::ptr;
-use crate::error::OfflineRegistryError;
+use crate::error::RegistryError;
 use crate::key::OfflineRegistryKey;
 use tracing::debug;
 use windows_result::{Error, HRESULT};
@@ -34,13 +34,13 @@ impl OfflineRegistryHive {
     /// # Errors
     /// 
     /// Returns an error if the hive could not be loaded.
-    pub fn load(&mut self, hive_path: &str) -> Result<(), OfflineRegistryError> {
+    pub fn load(&mut self, hive_path: &str) -> Result<(), RegistryError> {
         debug!("Loading hive: {hive_path}");
         let mut path: Vec<u16> = hive_path.encode_utf16().collect();
         path.push(0);
         let result = unsafe { OfflineRegistry::OROpenHive(path.as_ptr(), &mut self.hive) };
         if result != 0 {
-            Err(OfflineRegistryError::Windows(Error::from_hresult(HRESULT::from_win32(result))))
+            Err(RegistryError::Windows(Error::from_hresult(HRESULT::from_win32(result))))
         } else {
             debug!("Hive loaded");
             Ok(())
@@ -66,9 +66,9 @@ impl OfflineRegistryHive {
     /// # Errors
     /// 
     /// Returns an error if the key could not be opened.
-    pub fn open_key(&self, key_path: &str) -> Result<OfflineRegistryKey, OfflineRegistryError> {
+    pub fn open_key(&self, key_path: &str) -> Result<OfflineRegistryKey, RegistryError> {
         if self.hive.is_null() {
-            return Err(OfflineRegistryError::InvalidOperation("Hive not loaded".to_string()));
+            return Err(RegistryError::InvalidOperation("Hive not loaded".to_string()));
         }
 
         debug!("Opening key: {key_path}");
@@ -77,7 +77,7 @@ impl OfflineRegistryHive {
         path.push(0);
         let result = unsafe { OfflineRegistry::OROpenKey(self.hive, path.as_ptr(), &mut key_handle) };
         if result != 0 {
-            Err(OfflineRegistryError::Windows(Error::from_hresult(HRESULT::from_win32(result))))
+            Err(RegistryError::Windows(Error::from_hresult(HRESULT::from_win32(result))))
         } else {
             Ok(OfflineRegistryKey::new(key_path, self.hive, key_handle))
         }
