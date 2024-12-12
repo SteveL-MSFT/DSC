@@ -4,6 +4,7 @@
 use configure::config_doc::ExecutionKind;
 use dscerror::DscError;
 use dscresources::{dscresource::{DscResource, Invoke}, invoke_result::{GetResult, SetResult, TestResult}};
+use rust_i18n::{i18n, t};
 
 pub mod configure;
 pub mod discovery;
@@ -12,6 +13,8 @@ pub mod dscresources;
 pub mod functions;
 pub mod parser;
 pub mod util;
+
+i18n!("locales", fallback = "en-us");
 
 pub struct DscManager {
     discovery: discovery::Discovery,
