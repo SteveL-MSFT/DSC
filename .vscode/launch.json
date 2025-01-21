@@ -16,6 +16,14 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "name": "Debug win_service",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/resources/win_service/target/debug/win_service.exe",
+            "args": ["set", "--input", "{\"name\":\"PrintNotify\",\"startType\":\"Disabled\",\"systemRoot\":\"c:\"}"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
             "name": "(macOS) Attach",
             "type": "lldb",
             "request": "attach",

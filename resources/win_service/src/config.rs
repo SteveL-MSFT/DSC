@@ -39,19 +39,19 @@ pub enum ErrorControl {
 #[serde(deny_unknown_fields)]
 pub struct Service {
     #[schemars(extend("x-keyProperty" = true))]
-    pub name: Option<String>,
-    #[serde(rename = "displayName", skip_deserializing)]
+    pub name: String,
+    #[serde(rename = "displayName", skip_deserializing, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(rename = "imagePath", skip_deserializing)]
+    #[serde(rename = "imagePath", skip_deserializing, skip_serializing_if = "Option::is_none")]
     pub image_path: Option<String>,
     #[serde(skip_deserializing, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "serviceType", skip_deserializing)]
+    #[serde(rename = "serviceType", skip_deserializing, skip_serializing_if = "Option::is_none")]
     #[allow(clippy::struct_field_names)]
     pub service_type: Option<ServiceType>,
-    #[serde(rename = "startType")]
+    #[serde(rename = "startType", skip_serializing_if = "Option::is_none")]
     pub start_type: Option<StartupType>,
-    #[serde(rename = "errorControl")]
+    #[serde(rename = "errorControl", skip_serializing_if = "Option::is_none")]
     pub error_control: Option<ErrorControl>,
     #[serde(rename = "systemRoot", skip_serializing_if = "Option::is_none")]
     pub system_root: Option<String>,

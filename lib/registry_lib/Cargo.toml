@@ -1,5 +1,5 @@
 [package]
-name = "offreg"
+name = "registry_lib"
 version = "0.1.0"
 edition = "2021"
 
@@ -14,8 +14,10 @@ opt-level = 2
 lto = true
 
 [dependencies]
-thiserror = "2.0.3"
-tracing = "0.1.26"
+registry = "1.2"
+rust-i18n = "3"
+thiserror = "2.0"
+tracing = "0.1"
 windows-result = "0.2.0"
 windows-strings = "0.2.0"
-windows-sys= { version = "0.59.0", features = ["Wdk_System_OfflineRegistry", "Win32_Security", "Win32_System_Registry", "Win32_Foundation"] }
+windows-sys = { version = "0.59.0", features = ["Wdk_System_OfflineRegistry", "Win32_Security", "Win32_Foundation"] }

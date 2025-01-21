@@ -28,7 +28,9 @@
                 "jsonInputArg": "--input",
                 "mandatory": true
             }
-        ]
+        ],
+        "implementsPretest": true,
+        "return": "state"
     },
     "export": {
         "executable": "win_service",

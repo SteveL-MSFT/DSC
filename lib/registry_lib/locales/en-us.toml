@@ -1,0 +1,7 @@
+_version = 1
+
+[lib]
+systemRootNotFound = "System drive not found: #{drive}"
+hiveLoaded = "Hive loaded"
+hiveNotLoaded = "Hive not loaded"
+openingKey = "Opening key: #{path}"
