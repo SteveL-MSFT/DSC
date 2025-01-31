@@ -235,24 +235,10 @@ fn set(service_type: &ServiceType, service: &Service) {
 }
 
 fn set_offline_registry(service_type: &ServiceType, service: &Service, reg_key: &OfflineRegistryKey) {
-    match service_type {
-        ServiceType::Driver => {
-            if service.service_type == Some(config::ServiceType::KernelDriver) || service.service_type == Some(config::ServiceType::FileSystemDriver) {
-                debug!("Setting driver: {service:?}");
-                reg_key.set_value("Start", OfflineRegistryValueData::Dword(convert_start_type_to_value(service.start_type.as_ref().unwrap())));
-            } else {
-                error!("Invalid service type for driver: {service:?}");
-                exit(EXIT_INVALID_INPUT);
-            }
-        },
-        ServiceType::Service => {
-            if service.service_type == Some(config::ServiceType::Win32OwnProcess) || service.service_type == Some(config::ServiceType::Win32ShareProcess) {
-                debug!("Setting service: {service:?}");
-            } else {
-                error!("Invalid service type for service: {service:?}");
-                exit(EXIT_INVALID_INPUT);
-            }
-        }
+    debug!("Setting {service_type:?}: {service:?}");
+    if let Err(err) = reg_key.set_value("Start", OfflineRegistryValueData::Dword(convert_start_type_to_value(service.start_type.as_ref().unwrap()))) {
+        error!("Failed to set start type: {err}");
+        exit(EXIT_REGISTRY_ERROR);
     }
 }
 

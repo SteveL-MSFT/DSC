@@ -215,10 +215,10 @@ impl OfflineRegistryKey {
         })
     }
 
-    pub fn set_value(&self, value_name: &str, data: OfflineRegistryValueData) {
+    pub fn set_value(&self, value_name: &str, data: OfflineRegistryValueData) -> Result<(), OfflineRegistryError> {
         let mut name: Vec<u16> = value_name.encode_utf16().collect();
         name.push(0);
-        match data {
+        let hresult = match data {
             OfflineRegistryValueData::None => {
                 unsafe {
                     OfflineRegistry::ORSetValue(
@@ -228,7 +228,7 @@ impl OfflineRegistryKey {
                         ptr::null(),
                         0
                     )
-                };
+                }
             }
             OfflineRegistryValueData::Binary(data) => {
                 unsafe {
@@ -239,11 +239,11 @@ impl OfflineRegistryKey {
                         data.as_ptr().cast::<u8>(),
                         data.len() as u32 
                     )
-                };
+                }
             }
             OfflineRegistryValueData::Dword(data) => {
                 let data = data.to_le_bytes();
-                unsafe {
+                 unsafe {
                     OfflineRegistry::ORSetValue(
                         self.handle, 
                         name.as_ptr(), 
@@ -251,7 +251,7 @@ impl OfflineRegistryKey {
                         data.as_ptr().cast::<u8>(),
                         data.len() as u32 
                     )
-                };
+                }
             }
             OfflineRegistryValueData::ExpandString(data) => {
                 let data: Vec<u16> = data.encode_utf16().chain(std::iter::once(0)).collect();
@@ -263,7 +263,7 @@ impl OfflineRegistryKey {
                         data.as_ptr().cast::<u8>(),
                         data.len() as u32 
                     )
-                };
+                }
             }
             OfflineRegistryValueData::MultiString(data) => {
                 let mut data: Vec<u16> = data.iter().flat_map(|s| s.encode_utf16().chain(std::iter::once(0))).collect();
@@ -276,7 +276,7 @@ impl OfflineRegistryKey {
                         data.as_ptr().cast::<u8>(),
                         data.len() as u32 
                     )
-                };
+                }
             }
             OfflineRegistryValueData::Qword(data) => {
                 let data = data.to_le_bytes();
@@ -288,7 +288,7 @@ impl OfflineRegistryKey {
                         data.as_ptr().cast::<u8>(),
                         data.len() as u32 
                     )
-                };
+                }
             }
             OfflineRegistryValueData::String(data) => {
                 let data: Vec<u16> = data.encode_utf16().chain(std::iter::once(0)).collect();
@@ -300,9 +300,23 @@ impl OfflineRegistryKey {
                         data.as_ptr().cast::<u8>(),
                         data.len() as u32 
                     )
-                };
+                }
             }
-        }                
+        };
+        if hresult != 0 {
+            return Err(OfflineRegistryError::Windows(Error::from_hresult(HRESULT::from_win32(hresult))));
+        }
+
+        let hive_path = "c:\\hive";
+        let mut path: Vec<u16> = hive_path.encode_utf16().collect();
+        path.push(0);
+        match unsafe {
+            OfflineRegistry::ORSaveHive(self.hive, path.as_ptr(), 6, 0)
+        } {
+            0 => {},
+            hresult => return Err(OfflineRegistryError::Windows(Error::from_hresult(HRESULT::from_win32(hresult))))
+        }
+        Ok(())
     }
 }
 
