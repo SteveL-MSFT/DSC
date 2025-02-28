@@ -1,0 +1,13 @@
+name: DSC-Unofficial-$(Build.BuildId)
+trigger: none
+
+pr:
+  branches:
+    include:
+    - onebranch
+    - release/v*
+
+extends:
+  template: ./DSC-Common.yml
+  parameters:
+    OfficialBuild: false
