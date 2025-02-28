@@ -141,7 +141,8 @@ extends:
             }
             $env:PATH += ";$LLVMBIN"
             write-verbose -verbose (gcm clang.exe | out-string)
-            msrustup target add $(buildName)
+            msrustup default
+            msrustup default $(buildName)
             ./build.ps1 -Verbose -Clean -Release -Architecture $(buildName) -SkipLinkCheck
           displayName: 'Build $(buildName)'
           env:
