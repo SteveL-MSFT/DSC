@@ -33,12 +33,14 @@ stages:
     - checkout: self
       path: DSC
     - pwsh: |
+        Get-Location
+        dir
         Set-Location "$(Build.SourcesDirectory)\DSC"
         $packageVersion = ./build.ps1 -GetPackageVersion
         $vstsCommandString = "vso[task.setvariable variable=Version;isoutput=true]$packageVersion"
         Write-Host ("sending " + $vstsCommandString)
         Write-Host "##$vstsCommandString"
-      name: Package
+      name: GetPackageVersion
 
   - job: BuildWin
     dependsOn: SetPackageVersion
