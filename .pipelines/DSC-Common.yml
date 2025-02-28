@@ -9,7 +9,6 @@ variables:
   PackageRoot: '$(System.ArtifactsDirectory)/Packages'
   # Currently mariner image can't be used for musl build
   # LinuxContainerImage: 'mcr.microsoft.com/onebranch/cbl-mariner/build:2.0'
-  WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
   ${{ if eq(parameters.OfficialBuild, false) }}:
     SourcesDirectory: '.'
     ArtifactStagingDirectory: 'bin'
@@ -55,6 +54,7 @@ stages:
           Suffix: arm64
           buildName: aarch64-pc-windows-msvc
     variables:
+      WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
       PackageVersion: $[ dependencies.SetPackageVersion.outputs['Package.Version'] ]
       ob_sdl_tsa_configFile: '$(SourcesDirectory)\DSC\.config\tsaoptions.json'
       ob_outputDirectory: '$(ArtifactStagingDirectory)'
@@ -66,6 +66,7 @@ stages:
       ob_sdl_codeql_compiled_enabled: ${{ parameters.OfficialBuild }}
     pool:
       type: windows
+      vmImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
     displayName: BuildWin
     steps:
     - checkout: self
@@ -256,6 +257,7 @@ stages:
     displayName: Linux-x64-musl
     pool:
       type: linux
+      vmImage: ubuntu-latest
     steps:
     - task: RustInstaller@1
       inputs:
@@ -283,6 +285,7 @@ stages:
     displayName: Linux-ARM64-musl
     pool:
       type: linux
+      vmImage: ubuntu-latest
       hostArchitecture: arm64
     steps:
     - task: RustInstaller@1
