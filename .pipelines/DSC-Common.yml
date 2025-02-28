@@ -1,3 +1,4 @@
+
 parameters:
   - name: OfficialBuild
     type: boolean
@@ -29,6 +30,7 @@ stages:
       ob_sdl_codeql_compiled_enabled: false
     steps:
     - checkout: self
+      path: $(repoRoot)
     - pwsh: |
         $packageVersion = $(repoRoot)/build.ps1 -GetPackageVersion
         $vstsCommandString = "vso[task.setvariable variable=Version;isoutput=true]$packageVersion"
@@ -53,14 +55,15 @@ stages:
       ob_artifactSuffix: $(Suffix)
       repoRoot: '$(Build.SourcesDirectory)\DSC'
       signSrcPath: '$(Build.SourcesDirectory)\out'
-      ob_sdl_sbom_enabled: true
-      ob_signing_setup_enabled: true
-      ob_sdl_codeql_compiled_enabled: true
+      ob_sdl_sbom_enabled: $[ parameters.OfficialBuild ]
+      ob_signing_setup_enabled: $[ parameters.OfficialBuild ]
+      ob_sdl_codeql_compiled_enabled: $[ parameters.OfficialBuild ]
     pool:
       type: windows
     displayName: BuildWin
     steps:
     - checkout: self
+      path: $(repoRoot)
       env:
         ob_restore_phase: true
     - ${{ if eq(parameters.OfficialBuild, true) }}:
@@ -157,13 +160,14 @@ stages:
     variables:
       ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
       ob_sdl_tsa_configFile: '$(Build.SourcesDirectory)\DSC\.config\tsaoptions.json'
-      ob_sdl_sbom_enabled: true
-      ob_signing_setup_enabled: true
-      ob_sdl_codeql_compiled_enabled: true
+      ob_sdl_sbom_enabled: $[ parameters.OfficialBuild ]
+      ob_signing_setup_enabled: $[ parameters.OfficialBuild ]
+      ob_sdl_codeql_compiled_enabled: $[ parameters.OfficialBuild ]
     pool:
       type: windows
     steps:
     - checkout: self
+      path: $(repoRoot)
     - download: current
       artifact: drop_BuildAndSign_BuildWinx64
       patterns: '*.msix'
