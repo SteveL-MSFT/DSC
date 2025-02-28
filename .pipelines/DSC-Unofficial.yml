@@ -4,7 +4,7 @@ trigger: none
 pr:
   branches:
     include:
-    - onebranch
+    - unofficial-pipeline
     - release/v*
 
 extends:

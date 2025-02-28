@@ -97,7 +97,7 @@ stages:
         $env:PATH += ";$LLVMBIN"
         write-verbose -verbose (gcm clang.exe | out-string)
         write-verbose -verbose "Toolchains:"
-        msrustup show
+        msrustup toolchain list
         ./build.ps1 -Verbose -Clean -Release -Architecture $(buildName) -SkipLinkCheck
       displayName: 'Build $(buildName)'
       env:
