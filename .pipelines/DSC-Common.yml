@@ -66,9 +66,9 @@ stages:
       ob_sdl_codeql_compiled_enabled: ${{ parameters.OfficialBuild }}
     pool:
       type: windows
-      if ${{ parameters.OfficialBuild }}:
+      ${{ if eq(parameters.OfficialBuild, true) }}:
         vmImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
-      if ${{ eq(parameters.OfficialBuild, false) }}:
+      ${{ if eq(parameters.OfficialBuild, false) }}:
         vmImage: 'windows-latest'
     displayName: BuildWin
     steps:
