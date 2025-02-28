@@ -22,7 +22,8 @@ stages:
       type: windows
       vmImage: windows-latest
     variables:
-      repoRoot: $(Build.SourcesDirectory)\DSC
+#      repoRoot: $(Build.SourcesDirectory)\DSC
+      repoRoot: DSC
       ob_sdl_tsa_configFile: $(Build.SourcesDirectory)\DSC\.config\tsaoptions.json
       ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
       ob_sdl_sbom_enabled: false
