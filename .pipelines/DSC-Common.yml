@@ -33,7 +33,8 @@ stages:
     - checkout: self
       path: $(repoRoot)
     - pwsh: |
-        $packageVersion = $(repoRoot)/build.ps1 -GetPackageVersion
+        Set-Location "$(repoRoot)"
+        $packageVersion = ./build.ps1 -GetPackageVersion
         $vstsCommandString = "vso[task.setvariable variable=Version;isoutput=true]$packageVersion"
         Write-Host ("sending " + $vstsCommandString)
         Write-Host "##$vstsCommandString"
@@ -90,7 +91,7 @@ stages:
       env:
         ob_restore_phase: true
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)/DSC"
+        Set-Location "$(repoRoot)"
         $LLVMBIN = "$($env:PROGRAMFILES)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\bin"
         if (!(Test-Path $LLVMBIN)) {
           throw "LLVM path '$LLVMBIN' does not exist"
@@ -144,13 +145,13 @@ stages:
         TargetFolder: $(Build.SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)
         OverWrite: true
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)/DSC"
+        Set-Location "$(repoRoot)"
         ./build.ps1 -PackageType zip -Architecture $(buildName) -Release
         Copy-Item ./bin/*.zip "$(ob_outputDirectory)"
       displayName: 'Zip $(buildName)'
       condition: succeeded()
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)/DSC"
+        Set-Location "$(repoRoot)"
         ./build.ps1 -PackageType msix -Architecture $(buildName) -Release -UseX64MakeAppx
         Copy-Item ./bin/msix/*.msix "$(ob_outputDirectory)" -Verbose
       displayName: 'Create msix for $(buildName)'
@@ -176,7 +177,7 @@ stages:
       artifact: drop_BuildAndSign_BuildWinarm64
       patterns: '*.msix'
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)/DSC"
+        Set-Location "$(repoRoot)""
         $null = New-Item -ItemType Directory -Path "./bin/msix" -Force -ErrorAction Ignore
         Copy-Item "$(Pipeline.Workspace)/drop_BuildAndSign_BuildWinx64/*.msix" ./bin/msix -Verbose
         Copy-Item "$(Pipeline.Workspace)/drop_BuildAndSign_BuildWinarm64/*.msix" ./bin/msix -Verbose
