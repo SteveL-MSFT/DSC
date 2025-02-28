@@ -22,7 +22,6 @@ stages:
       type: windows
       vmImage: windows-latest
     variables:
-#      repoRoot: $(Build.SourcesDirectory)\DSC
       repoRoot: '$(Build.SourcesDirectory)\DSC'
       ob_sdl_tsa_configFile: $(Build.SourcesDirectory)\DSC\.config\tsaoptions.json
       ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
@@ -33,10 +32,7 @@ stages:
     - checkout: self
       path: DSC
     - pwsh: |
-        write-verbose -verbose (Get-Location | out-string)
-        write-verbose -verbose (dir | out-string)
-        Set-Location "$(Build.SourcesDirectory)\DSC"
-        $packageVersion = ./build.ps1 -GetPackageVersion
+        $packageVersion = (./build.ps1 -GetPackageVersion)
         $vstsCommandString = "vso[task.setvariable variable=Version;isoutput=true]$packageVersion"
         Write-Host ("sending " + $vstsCommandString)
         Write-Host "##$vstsCommandString"
