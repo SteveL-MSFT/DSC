@@ -11,9 +11,11 @@ variables:
   # LinuxContainerImage: 'mcr.microsoft.com/onebranch/cbl-mariner/build:2.0'
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
   ${{ if eq(parameters.OfficialBuild, false) }}:
-    Build:
-      SourcesDirectory: '.'
-      ArtifactStagingDirectory: 'bin'
+    SourcesDirectory: '.'
+    ArtifactStagingDirectory: 'bin'
+  ${{ if eq(parameters.OfficialBuild, true) }}:
+    SourcesDirectory: '$(Build.SourcesDirectory)'
+    ArtifactStagingDirectory: '$(Build.ArtifactStagingDirectory)'
 
 stages:
 - stage: BuildAndSign
@@ -26,9 +28,9 @@ stages:
       type: windows
       vmImage: windows-latest
     variables:
-      repoRoot: '$(Build.SourcesDirectory)\DSC'
-      ob_sdl_tsa_configFile: $(Build.SourcesDirectory)\DSC\.config\tsaoptions.json
-      ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+      repoRoot: '$(SourcesDirectory)\DSC'
+      ob_sdl_tsa_configFile: $(SourcesDirectory)\DSC\.config\tsaoptions.json
+      ob_outputDirectory: '$(ArtifactStagingDirectory)'
       ob_sdl_sbom_enabled: false
       ob_signing_setup_enabled: false
       ob_sdl_codeql_compiled_enabled: false
@@ -54,11 +56,11 @@ stages:
           buildName: aarch64-pc-windows-msvc
     variables:
       PackageVersion: $[ dependencies.SetPackageVersion.outputs['Package.Version'] ]
-      ob_sdl_tsa_configFile: '$(Build.SourcesDirectory)\DSC\.config\tsaoptions.json'
-      ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+      ob_sdl_tsa_configFile: '$(SourcesDirectory)\DSC\.config\tsaoptions.json'
+      ob_outputDirectory: '$(ArtifactStagingDirectory)'
       ob_artifactSuffix: $(Suffix)
-      repoRoot: '$(Build.SourcesDirectory)\DSC'
-      signSrcPath: '$(Build.SourcesDirectory)\out'
+      repoRoot: '$(SourcesDirectory)\DSC'
+      signSrcPath: '$(SourcesDirectory)\out'
       ob_sdl_sbom_enabled: $[ parameters.OfficialBuild ]
       ob_signing_setup_enabled: $[ parameters.OfficialBuild ]
       ob_sdl_codeql_compiled_enabled: $[ parameters.OfficialBuild ]
@@ -93,7 +95,7 @@ stages:
       env:
         ob_restore_phase: true
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)\DSC"
+        Set-Location "$(SourcesDirectory)\DSC"
         $LLVMBIN = "$($env:PROGRAMFILES)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\bin"
         if (!(Test-Path $LLVMBIN)) {
           throw "LLVM path '$LLVMBIN' does not exist"
@@ -120,7 +122,7 @@ stages:
         # copy only the exes from the TMP folder since it contains intermediately built files we don't want to sign
         write-host 'Binaries in $(env:CARGO_TARGET_DIR)'
         Copy-Item -Path "$env:CARGO_TARGET_DIR/$(buildName)/$(BuildConfiguration)/*.exe" -Destination "$(signSrcPath)" -Verbose
-        Copy-Item -Path "$(Build.SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)/*" -Recurse -Destination "$(signSrcPath)" -Verbose -Force
+        Copy-Item -Path "$(SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)/*" -Recurse -Destination "$(signSrcPath)" -Verbose -Force
         write-host 'Binaries in $(signSrcPath)'
         dir -r "$(signSrcPath)"
       displayName: Copy built binaries
@@ -144,16 +146,16 @@ stages:
       inputs:
         SourceFolder: "$(signSrcPath)"
         Contents: '**'
-        TargetFolder: $(Build.SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)
+        TargetFolder: $(SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)
         OverWrite: true
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)\DSC"
+        Set-Location "$(SourcesDirectory)\DSC"
         ./build.ps1 -PackageType zip -Architecture $(buildName) -Release
         Copy-Item ./bin/*.zip "$(ob_outputDirectory)"
       displayName: 'Zip $(buildName)'
       condition: succeeded()
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)\DSC"
+        Set-Location "$(SourcesDirectory)\DSC"
         ./build.ps1 -PackageType msix -Architecture $(buildName) -Release -UseX64MakeAppx
         Copy-Item ./bin/msix/*.msix "$(ob_outputDirectory)" -Verbose
       displayName: 'Create msix for $(buildName)'
@@ -162,8 +164,8 @@ stages:
   - job: CreateMsixBundle
     dependsOn: BuildWin
     variables:
-      ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
-      ob_sdl_tsa_configFile: '$(Build.SourcesDirectory)\DSC\.config\tsaoptions.json'
+      ob_outputDirectory: '$(ArtifactStagingDirectory)'
+      ob_sdl_tsa_configFile: '$(SourcesDirectory)\DSC\.config\tsaoptions.json'
       ob_sdl_sbom_enabled: $[ parameters.OfficialBuild ]
       ob_signing_setup_enabled: $[ parameters.OfficialBuild ]
       ob_sdl_codeql_compiled_enabled: $[ parameters.OfficialBuild ]
@@ -178,7 +180,7 @@ stages:
       artifact: drop_BuildAndSign_BuildWinarm64
       patterns: '*.msix'
     - pwsh: |
-        Set-Location "$(Build.SourcesDirectory)\DSC"
+        Set-Location "$(SourcesDirectory)\DSC"
         $null = New-Item -ItemType Directory -Path "./bin/msix" -Force -ErrorAction Ignore
         Copy-Item "$(Pipeline.Workspace)/drop_BuildAndSign_BuildWinx64/*.msix" ./bin/msix -Verbose
         Copy-Item "$(Pipeline.Workspace)/drop_BuildAndSign_BuildWinarm64/*.msix" ./bin/msix -Verbose
@@ -194,7 +196,7 @@ stages:
   #   variables:
   #     LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2204:latest'
   #     PackageVersion: $[ dependencies.SetPackageVersion.outputs['Package.Version'] ]
-  #     ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+  #     ob_outputDirectory: '$(ArtifactStagingDirectory)'
   #   displayName: Linux-x64-gnu
   #   pool:
   #     type: linux
@@ -219,7 +221,7 @@ stages:
   #   variables:
   #     LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004-arm64:latest'
   #     PackageVersion: $[ dependencies.SetPackageVersion.outputs['Package.Version'] ]
-  #     ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+  #     ob_outputDirectory: '$(ArtifactStagingDirectory)'
   #   displayName: Linux-ARM64-gnu
   #   pool:
   #     type: linux
@@ -250,7 +252,7 @@ stages:
     variables:
       LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2204:latest'
       PackageVersion: $[ dependencies.SetPackageVersion.outputs['Package.Version'] ]
-      ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+      ob_outputDirectory: '$(ArtifactStagingDirectory)'
     displayName: Linux-x64-musl
     pool:
       type: linux
@@ -277,7 +279,7 @@ stages:
     variables:
       LinuxContainerImage: 'onebranch.azurecr.io/linux/ubuntu-2004-arm64:latest'
       PackageVersion: $[ dependencies.SetPackageVersion.outputs['Package.Version'] ]
-      ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+      ob_outputDirectory: '$(ArtifactStagingDirectory)'
     displayName: Linux-ARM64-musl
     pool:
       type: linux
@@ -316,7 +318,7 @@ stages:
     dependsOn: SetPackageVersion
     variables:
       PackageVersion: $[ dependencies.SetPackageVersion.outputs['Package.Version'] ]
-      ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+      ob_outputDirectory: '$(ArtifactStagingDirectory)'
     displayName: BuildMac
     pool:
       type: linux
