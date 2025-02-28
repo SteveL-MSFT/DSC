@@ -23,7 +23,7 @@ stages:
       vmImage: windows-latest
     variables:
 #      repoRoot: $(Build.SourcesDirectory)\DSC
-      repoRoot: DSC
+      repoRoot: '$(Build.SourcesDirectory)\DSC'
       ob_sdl_tsa_configFile: $(Build.SourcesDirectory)\DSC\.config\tsaoptions.json
       ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
       ob_sdl_sbom_enabled: false
@@ -31,9 +31,9 @@ stages:
       ob_sdl_codeql_compiled_enabled: false
     steps:
     - checkout: self
-      path: $(repoRoot)
+      path: DSC
     - pwsh: |
-        Set-Location "$(repoRoot)"
+        Set-Location "$(Build.SourcesDirectory)\DSC"
         $packageVersion = ./build.ps1 -GetPackageVersion
         $vstsCommandString = "vso[task.setvariable variable=Version;isoutput=true]$packageVersion"
         Write-Host ("sending " + $vstsCommandString)
@@ -91,7 +91,7 @@ stages:
       env:
         ob_restore_phase: true
     - pwsh: |
-        Set-Location "$(repoRoot)"
+        Set-Location "$(Build.SourcesDirectory)\DSC"
         $LLVMBIN = "$($env:PROGRAMFILES)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\bin"
         if (!(Test-Path $LLVMBIN)) {
           throw "LLVM path '$LLVMBIN' does not exist"
@@ -145,13 +145,13 @@ stages:
         TargetFolder: $(Build.SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)
         OverWrite: true
     - pwsh: |
-        Set-Location "$(repoRoot)"
+        Set-Location "$(Build.SourcesDirectory)\DSC"
         ./build.ps1 -PackageType zip -Architecture $(buildName) -Release
         Copy-Item ./bin/*.zip "$(ob_outputDirectory)"
       displayName: 'Zip $(buildName)'
       condition: succeeded()
     - pwsh: |
-        Set-Location "$(repoRoot)"
+        Set-Location "$(Build.SourcesDirectory)\DSC"
         ./build.ps1 -PackageType msix -Architecture $(buildName) -Release -UseX64MakeAppx
         Copy-Item ./bin/msix/*.msix "$(ob_outputDirectory)" -Verbose
       displayName: 'Create msix for $(buildName)'
@@ -169,7 +169,6 @@ stages:
       type: windows
     steps:
     - checkout: self
-      path: $(repoRoot)
     - download: current
       artifact: drop_BuildAndSign_BuildWinx64
       patterns: '*.msix'
@@ -177,7 +176,7 @@ stages:
       artifact: drop_BuildAndSign_BuildWinarm64
       patterns: '*.msix'
     - pwsh: |
-        Set-Location "$(repoRoot)""
+        Set-Location "$(Build.SourcesDirectory)\DSC"
         $null = New-Item -ItemType Directory -Path "./bin/msix" -Force -ErrorAction Ignore
         Copy-Item "$(Pipeline.Workspace)/drop_BuildAndSign_BuildWinx64/*.msix" ./bin/msix -Verbose
         Copy-Item "$(Pipeline.Workspace)/drop_BuildAndSign_BuildWinarm64/*.msix" ./bin/msix -Verbose
