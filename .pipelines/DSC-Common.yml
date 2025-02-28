@@ -10,6 +10,10 @@ variables:
   # Currently mariner image can't be used for musl build
   # LinuxContainerImage: 'mcr.microsoft.com/onebranch/cbl-mariner/build:2.0'
   WindowsContainerImage: 'onebranch.azurecr.io/windows/ltsc2022/vse2022:latest'
+  ${{ if eq(parameters.OfficialBuild, false) }}:
+    Build:
+      SourcesDirectory: '.'
+      ArtifactStagingDirectory: 'bin'
 
 stages:
 - stage: BuildAndSign
