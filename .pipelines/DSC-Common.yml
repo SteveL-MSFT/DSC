@@ -107,7 +107,8 @@ stages:
         write-verbose -verbose (gcm clang.exe | out-string)
         write-verbose -verbose "Toolchains:"
         msrustup toolchain list
-        ./build.ps1 -Verbose -Clean -Release -Architecture $(buildName) -SkipLinkCheck
+        $env:MSRUSTUP_TOOLCHAIN = "$(buildName)"
+        ./build.ps1 -Verbose -Release -Architecture $(buildName) -SkipLinkCheck
       displayName: 'Build $(buildName)'
       env:
         ob_restore_phase: true
@@ -271,7 +272,7 @@ stages:
     - pwsh: |
         apt update
         apt -y install musl-tools
-        ./build.ps1 -Verbose -Clean -Release -Architecture x86_64-unknown-linux-musl
+        ./build.ps1 -Verbose -Release -Architecture x86_64-unknown-linux-musl
         write-verbose -verbose (dir | out-string)
         write-verbose -verbose (get-location | out-string)
         write-verbose -verbose (dir ./bin | out-string)
@@ -315,7 +316,7 @@ stages:
         if ((openssl version -d) -match 'OPENSSLDIR: "(?<dir>.*?)"') {
           $env:OPENSSL_LIB_DIR = $matches['dir']
         }
-        ./build.ps1 -Verbose -Clean -Release -Architecture aarch64-unknown-linux-musl
+        ./build.ps1 -Verbose -Release -Architecture aarch64-unknown-linux-musl
         ./build.ps1 -PackageType tgz -Architecture aarch64-unknown-linux-musl -Release
         Copy-Item ./bin/*.tar.gz "$(ob_outputDirectory)"
       displayName: 'Build aarch64-unknown-linux-musl'
@@ -348,7 +349,7 @@ stages:
       env:
         ob_restore_phase: true
     - pwsh: |
-        ./build.ps1 -Verbose -Clean -Release -Architecture $(buildName)
+        ./build.ps1 -Verbose -Release -Architecture $(buildName)
         ./build.ps1 -PackageType tgz -Architecture $(buildName) -Release
         Copy-Item ./bin/*.tar.gz "$(ob_outputDirectory)"
         Write-Host "##vso[artifact.upload containerfolder=release;artifactname=release]$(ob_outputDirectory)/DSC-$(PackageVersion)-$(buildName).tar.gz"
