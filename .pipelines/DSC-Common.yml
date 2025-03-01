@@ -273,10 +273,6 @@ stages:
         apt update
         apt -y install musl-tools
         ./build.ps1 -Verbose -Release -Architecture x86_64-unknown-linux-musl
-        write-verbose -verbose (dir | out-string)
-        write-verbose -verbose (get-location | out-string)
-        write-verbose -verbose (dir ./bin | out-string)
-        write-verbose -verbose (dir ./bin/x86_64-unknown-linux-musl | out-string)
         write-verbose -verbose (dir ./bin/x86_64-unknown-linux-musl/release | out-string)
         ./build.ps1 -PackageType tgz -Architecture x86_64-unknown-linux-musl -Release
         Copy-Item ./bin/*.tar.gz "$(ob_outputDirectory)"
