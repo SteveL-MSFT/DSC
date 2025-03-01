@@ -10,8 +10,8 @@ variables:
   # Currently mariner image can't be used for musl build
   # LinuxContainerImage: 'mcr.microsoft.com/onebranch/cbl-mariner/build:2.0'
   ${{ if eq(parameters.OfficialBuild, false) }}:
-    SourcesDirectory: '.'
-    ArtifactStagingDirectory: 'bin'
+    SourcesDirectory: '$(Build.SourcesDirectory)'
+    ArtifactStagingDirectory: '$(Build.Repository.LocalPath)/bin'
   ${{ if eq(parameters.OfficialBuild, true) }}:
     SourcesDirectory: '$(Build.SourcesDirectory)'
     ArtifactStagingDirectory: '$(Build.ArtifactStagingDirectory)'
@@ -100,6 +100,7 @@ stages:
         ob_restore_phase: true
     - pwsh: |
         Set-Location "$(SourcesDirectory)\DSC"
+        write-verbose -verbose (dir | out-string)
         $LLVMBIN = "$($env:PROGRAMFILES)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\bin"
         if (!(Test-Path $LLVMBIN)) {
           throw "LLVM path '$LLVMBIN' does not exist"
@@ -274,6 +275,7 @@ stages:
         apt update
         apt -y install musl-tools
         ./build.ps1 -Verbose -Clean -Release -Architecture x86_64-unknown-linux-musl
+        write-verbose -verbose (dir | out-string)
         ./build.ps1 -PackageType tgz -Architecture x86_64-unknown-linux-musl -Release
         Copy-Item ./bin/*.tar.gz "$(ob_outputDirectory)"
       displayName: 'Build x86_64-unknown-linux-musl'
