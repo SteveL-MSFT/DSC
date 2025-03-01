@@ -123,10 +123,12 @@ function Find-LinkExe {
     }
 }
 
+$channel = 'stable'
 if ($null -ne (Get-Command rustup -ErrorAction Ignore)) {
     $rustup = 'rustup'
 } elseif ($null -ne (Get-Command msrustup -ErrorAction Ignore)) {
     $rustup = 'msrustup'
+    $channel = 'ms-stable'
 } else {
     $rustup = 'echo'
 }
@@ -194,7 +196,7 @@ if ($architecture -eq 'current') {
     $target = Join-Path $PSScriptRoot 'bin' $configuration
 }
 else {
-    & $rustup target add $architecture
+    & $rustup target add --toolchain $channel $architecture
     $flags += '--target'
     $flags += $architecture
     $path = ".\target\$architecture\$configuration"
