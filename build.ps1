@@ -125,9 +125,12 @@ function Find-LinkExe {
 
 if ($null -ne (Get-Command rustup -ErrorAction Ignore)) {
     $rustup = 'rustup'
+} elseif ($null -ne (Get-Command msrustup -ErrorAction Ignore)) {
+    $rustup = 'msrustup'
 } else {
     $rustup = 'echo'
 }
+
 
 if ($null -ne $packageType) {
     $SkipBuild = $true

@@ -127,7 +127,6 @@ stages:
         Copy-Item -Path "$env:CARGO_TARGET_DIR/$(buildName)/$(BuildConfiguration)/*.exe" -Destination "$(signSrcPath)" -Verbose
         Copy-Item -Path "$(SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)/*" -Recurse -Destination "$(signSrcPath)" -Verbose -Force
         write-host 'Binaries in $(signSrcPath)'
-        dir -r "$(signSrcPath)"
       displayName: Copy built binaries
       env:
         ob_restore_phase: true
