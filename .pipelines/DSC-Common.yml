@@ -124,9 +124,9 @@ stages:
         # workaround known issue of building in OneBranch copying from TMP folder
         $null = New-Item -ItemType Directory -Path "$(signSrcPath)" -ErrorAction Ignore
         # copy only the exes from the TMP folder since it contains intermediately built files we don't want to sign
-        write-host 'Binaries in $(env:CARGO_TARGET_DIR)'
+        write-host "Binaries in $(env:CARGO_TARGET_DIR)"
         Copy-Item -Path "$env:CARGO_TARGET_DIR/$(buildName)/$(BuildConfiguration)/*.exe" -Destination "$(signSrcPath)" -Verbose
-        Copy-Item -Path "$(SourcesDirectory)/DSC/bin/$(buildName)/$(BuildConfiguration)/*" -Recurse -Destination "$(signSrcPath)" -Verbose -Force
+        Copy-Item -Path "$(SourcesDirectory)/bin/$(buildName)/$(BuildConfiguration)/*" -Recurse -Destination "$(signSrcPath)" -Verbose -Force
         write-host 'Binaries in $(signSrcPath)'
       displayName: Copy built binaries
       env:
@@ -274,6 +274,7 @@ stages:
         apt -y install musl-tools
         ./build.ps1 -Verbose -Release -Architecture x86_64-unknown-linux-musl
         write-verbose -verbose (dir ./bin/x86_64-unknown-linux-musl/release | out-string)
+        $env:TARGET_CC=x86_64-linux-musl-gcc
         ./build.ps1 -PackageType tgz -Architecture x86_64-unknown-linux-musl -Release
         Copy-Item ./bin/*.tar.gz "$(ob_outputDirectory)"
       displayName: 'Build x86_64-unknown-linux-musl'
@@ -310,6 +311,7 @@ stages:
         apt -y install gcc-multilib
         apt -y install libssl-dev
         apt -y install pkg-config
+        apt -y install libc-dev
         rustup default stable-aarch64-unknown-linux-musl
         if ((openssl version -d) -match 'OPENSSLDIR: "(?<dir>.*?)"') {
           $env:OPENSSL_LIB_DIR = $matches['dir']

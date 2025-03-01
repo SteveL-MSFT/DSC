@@ -129,10 +129,12 @@ if ($null -ne (Get-Command rustup -ErrorAction Ignore)) {
 } elseif ($null -ne (Get-Command msrustup -ErrorAction Ignore)) {
     $rustup = 'msrustup'
     $channel = 'ms-stable'
+    if ($architecture -eq 'current') {
+        $env:MSRUSTUP_TOOLCHAIN = "$architecture"
+    }
 } else {
     $rustup = 'echo'
 }
-
 
 if ($null -ne $packageType) {
     $SkipBuild = $true
