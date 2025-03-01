@@ -73,7 +73,6 @@ stages:
     displayName: BuildWin
     steps:
     - checkout: self
-      path: $(repoRoot)
       env:
         ob_restore_phase: true
     - ${{ if eq(parameters.OfficialBuild, true) }}:
@@ -99,7 +98,6 @@ stages:
       env:
         ob_restore_phase: true
     - pwsh: |
-        Set-Location "$(SourcesDirectory)\DSC"
         write-verbose -verbose (dir | out-string)
         $LLVMBIN = "$($env:PROGRAMFILES)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\Llvm\bin"
         if (!(Test-Path $LLVMBIN)) {
