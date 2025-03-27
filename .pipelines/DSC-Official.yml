@@ -149,6 +149,39 @@ extends:
             Copy-Item ./bin/*.msixbundle "$(ob_outputDirectory)"
           displayName: 'Create msixbundle'
           condition: succeeded()
+        - task: onebranch.pipeline.signing@1
+          displayName: 'Sign MSIX bundle'
+          inputs:
+            command: 'sign'
+            search_root: '$(ob_outputDirectory)'
+            files_to_sign: '*.msixbundle'
+            inline_operation: |
+              [
+                {
+                    "KeyCode" : "Dynamic",
+                    "CertTemplateName" : "WINMSAPP1ST",
+                    "CertSubjectName" : "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                    "OperationCode" : "SigntoolvNextSign",
+                    "Parameters" : {
+                        "OpusName" : "Microsoft",
+                        "OpusInfo" : "http://www.microsoft.com",
+                        "FileDigest" : "/fd \"SHA256\"",
+                        "TimeStamp" : "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                    },
+                    "ToolName" : "sign",
+                    "ToolVersion" : "1.0"
+                },
+                {
+                    "KeyCode" : "Dynamic",
+                    "CertTemplateName" : "WINMSAPP1ST",
+                    "CertSubjectName" : "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                    "OperationCode" : "SigntoolVerify",
+                    "Parameters" : {},
+                    "ToolName" : "sign",
+                    "ToolVersion" : "1.0"
+                }
+              ]
+          condition: ne(variables['IsDevBuild'], 'true')
 
       - job: BuildLinuxMusl
         dependsOn: SetPackageVersion
