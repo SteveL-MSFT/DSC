@@ -181,7 +181,6 @@ extends:
                     "ToolVersion" : "1.0"
                 }
               ]
-          condition: ne(variables['IsDevBuild'], 'true')
 
       - job: BuildLinuxMusl
         dependsOn: SetPackageVersion
