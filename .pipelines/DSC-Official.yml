@@ -181,6 +181,7 @@ extends:
                     "ToolVersion" : "1.0"
                 }
               ]
+          condition: succeeded()
 
       - job: BuildLinuxMusl
         dependsOn: SetPackageVersion
