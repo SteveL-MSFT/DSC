@@ -1,0 +1,43 @@
+{
+  "$schema": "https://aka.ms/dsc/schemas/v3/bundled/config/document.json",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.36.1.42791",
+      "templateHash": "11799749379178855313"
+    }
+  },
+  "parameters": {
+    "loopCount": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Example of a loop in DSC"
+      }
+    }
+  },
+  "variables": {
+    "copy": [
+      {
+        "name": "loopItems",
+        "count": "[length(range(0, parameters('loopCount')))]",
+        "input": "[range(0, parameters('loopCount'))[copyIndex('loopItems')]]"
+      }
+    ]
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "echo",
+        "count": "[length(variables('loopItems'))]"
+      },
+      "type": "Microsoft.DSC.Debug/Echo",
+      "apiVersion": "2025-06-01",
+      "name": "[format('example{0}', variables('loopItems')[copyIndex()])]",
+      "properties": {
+        "output": "[format('This is loop item {0}', variables('loopItems')[copyIndex()])]"
+      }
+    }
+  ]
+}

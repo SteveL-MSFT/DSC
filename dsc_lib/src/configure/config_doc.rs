@@ -124,6 +124,20 @@ pub enum DataType {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+pub struct VariablePropertyCopy {
+    pub name: String,
+    pub count: i64,
+    pub input: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+pub struct ResourceCopy {
+    pub name: String,
+    pub count: i64,
+    // mode and batch are not currently supported
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct Resource {
     /// The fully qualified name of the resource type
     #[serde(rename = "type")]
@@ -139,6 +153,8 @@ pub struct Resource {
     pub properties: Option<Map<String, Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<Metadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub copy: Option<ResourceCopy>,
 }
 
 impl Default for Configuration {
@@ -193,6 +209,7 @@ impl Resource {
             resource_type: String::new(),
             name: String::new(),
             depends_on: None,
+            copy: None,
             kind: None,
             properties: None,
             metadata: None,
