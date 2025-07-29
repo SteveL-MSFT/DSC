@@ -242,6 +242,17 @@ fn get_metadata_from_result(mut context: Option<&mut Context>, result: &mut Valu
                             continue;
                         }
                     }
+                    if key == "_refreshPath" {
+                        if let Some(perform_refresh) = value.as_bool() {
+                            if perform_refresh {
+                                // on Windows, refresh the PATH env var from registry
+
+                            }
+                        } else {
+                            warn!("{}", t!("configure.mod.metadataRefreshPathInvalid", value = value));
+                            continue;
+                        }
+                    }
                 }
                 metadata.other.insert(key.clone(), value.clone());
             }
