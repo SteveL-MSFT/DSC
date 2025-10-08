@@ -12,7 +12,7 @@ param(
     [ValidateSet('msix','msix-private','msixbundle','tgz','zip')]
     $packageType,
     [switch]$Test,
-    [switch]$UseRunspacePool,
+    [switch]$Parallel,
     [switch]$GetPackageVersion,
     [switch]$SkipLinkCheck,
     [switch]$UseX64MakeAppx,
@@ -635,7 +635,7 @@ if ($Test) {
     }
 
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-    if ($UseRunspacePool)
+    if ($Parallel)
     {
         # Find all directories that contain .Tests.ps1 files
         $testPaths = @{}
@@ -688,8 +688,13 @@ if ($Test) {
             foreach ($testPath in $testJobs)
             {
                 $handle = $testPaths[$testPath].Handle
-                if ($handle.IsCompleted -eq "Completed")
+                if ($null -eq $handle)
                 {
+                    throw "No handle for $testPath"
+                }
+                elseif ($handle.IsCompleted -eq "Completed")
+                {
+                    $jobsLeft--
                     foreach ($output in $testPaths[$testPath].PowerShell.EndInvoke($handle)) {
                         if ($null -eq $output) {
                             throw "No output from $testPath"
@@ -713,8 +718,6 @@ if ($Test) {
                         $failed += $output.FailedCount
                         $skipped += $output.SkippedCount
                         $pending += $output.NotRunCount
-                        $jobsLeft--
-                        Write-Host "Jobs Left: $jobsLeft Finished: $testPath" -ForegroundColor Magenta
                         $errorOutput = $testPaths[$testPath].PowerShell.Streams.Error
                         if ($errorOutput.Count -gt 0)
                         {
@@ -726,8 +729,17 @@ if ($Test) {
                         if ($testPaths[$testPath].PowerShell.Failed) {
                             throw "Test failed in $testPath"
                         }
-                        $testPaths[$testPath].PowerShell.Dispose()
-                        $testPaths.Remove($testPath)
+                    }
+                    $testPaths[$testPath].PowerShell.Dispose()
+                    $testPaths.Remove($testPath)
+                    Write-Host "Jobs Left: $jobsLeft Finished: $testPath" -ForegroundColor Magenta
+                } else {
+                    Write-Host "Job still running for $testPath :`n $($handle | Format-List | Out-String)" -ForegroundColor DarkGray
+                    if ($testPaths[$testPath].PowerShell.Streams.Error.Count -gt 0) {
+                        Write-Host "Error output so far from $testPath" -ForegroundColor Red
+                        $testPaths[$testPath].PowerShell.Streams.Error | ForEach-Object {
+                            Write-Host $_ -ForegroundColor Red
+                        }
                     }
                 }
             }
