@@ -12,6 +12,7 @@ param(
     [ValidateSet('msix','msix-private','msixbundle','tgz','zip')]
     $packageType,
     [switch]$Test,
+    [switch]$UseRunspacePool,
     [switch]$GetPackageVersion,
     [switch]$SkipLinkCheck,
     [switch]$UseX64MakeAppx,
@@ -633,7 +634,125 @@ if ($Test) {
         (Get-Module -Name Pester -ListAvailable).Path
     }
 
-    Invoke-Pester -Output Detailed -ErrorAction Stop
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    if ($UseRunspacePool)
+    {
+        # Find all directories that contain .Tests.ps1 files
+        $testPaths = @{}
+        $testScriptPaths = @()
+        foreach ($subPath in $PSScriptRoot)
+        {
+            $testScriptPaths += (Get-ChildItem -Recurse -Path $subPath -Filter *.?ests.ps1 | Select-Object -Property DirectoryName -Unique).DirectoryName
+        }
+        # Remove any child paths included in parents
+        $prevPath = (Get-Random).ToString()
+        foreach ($testPath in $testScriptPaths)
+        {
+            if (!$testPath.Contains($prevPath))
+            {
+                $prevPath = $testPath
+                $testPaths += @{$testPath=$true}
+            }
+        }
+
+        $MaxRunspacePool = 4
+        $runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxRunspacePool)
+        $null = $runspacePool.Open()
+
+        $testJobs = $testPaths.Keys.Clone()
+        foreach ($testPath in $testJobs)
+        {
+            Write-Host "Starting test job for $testPath"
+            $psh = [powershell]::Create()
+            $psh.RunspacePool = $runspacePool
+            $null = $psh.AddScript({
+                param($testPath)
+                $conf = New-PesterConfiguration;
+                $conf.run.Path = "$testPath"
+                $conf.run.throw = $false
+                $conf.run.passthru = $true
+                Invoke-Pester -Configuration $conf
+            }).AddArgument($testPath)
+            $handle = $psh.BeginInvoke()
+            $testPaths[$testPath] = @{PowerShell=$psh;Handle=$handle}
+        }
+        $jobsLeft = $testPaths.Count
+        Write-Host "Total jobs: $jobsLeft" -ForegroundColor Yellow
+        $passed = 0
+        $failed = 0
+        $skipped = 0
+        $pending = 0
+        while ($jobsLeft -gt 0)
+        {
+            $testJobs = $testPaths.Keys.Clone()
+            foreach ($testPath in $testJobs)
+            {
+                $handle = $testPaths[$testPath].Handle
+                if ($handle.IsCompleted -eq "Completed")
+                {
+                    foreach ($output in $testPaths[$testPath].PowerShell.EndInvoke($handle)) {
+                        if ($null -eq $output) {
+                            throw "No output from $testPath"
+                        }
+                        if ($output -isnot [Pester.Run]) {
+                            Write-Host "$($output | Out-String)" -ForegroundColor Yellow
+                            continue
+                        }
+                        Write-Host "Test job completed for $testPath" -ForegroundColor Green
+                        foreach ($testResult in $output.tests) {
+                            if ($testResult.Passed -eq $false) {
+                                Write-Host $testResult.ToString() -ForegroundColor Red
+                            } elseif ($testResult.Skipped) {
+                                Write-Host $testResult.ToString() -ForegroundColor Yellow
+                            } else {
+                                Write-Host $testResult.ToString() -ForegroundColor Green
+                            }
+                        }
+                        Write-Host "$($PSStyle.Foreground.Green)Passed $($output.PassedCount) $($PSStyle.Foreground.Red)Failed $($output.FailedCount) $($PSStyle.Foreground.Yellow)Skipped $($output.SkippedCount) $($PSStyle.Foreground.Cyan)Pending $($output.NotRunCount)"
+                        $passed += $output.PassedCount
+                        $failed += $output.FailedCount
+                        $skipped += $output.SkippedCount
+                        $pending += $output.NotRunCount
+                        $jobsLeft--
+                        Write-Host "Jobs Left: $jobsLeft Finished: $testPath" -ForegroundColor Magenta
+                        $errorOutput = $testPaths[$testPath].PowerShell.Streams.Error
+                        if ($errorOutput.Count -gt 0)
+                        {
+                            Write-Host "Error output from $testPath" -ForegroundColor Red
+                            $errorOutput | ForEach-Object {
+                                Write-Host $_ -ForegroundColor Red
+                            }
+                        }
+                        if ($testPaths[$testPath].PowerShell.Failed) {
+                            throw "Test failed in $testPath"
+                        }
+                        $testPaths[$testPath].PowerShell.Dispose()
+                        $testPaths.Remove($testPath)
+                    }
+                }
+            }
+            Start-Sleep -Seconds 5
+        }
+        [console]::ResetColor()
+        Write-Host "Totals:"
+        Write-Host "Passed: " -NoNewline
+        Write-Host $passed -ForegroundColor Green -NoNewline
+        Write-Host " Failed: " -NoNewline
+        Write-Host $failed -ForegroundColor Red -NoNewline
+        Write-Host " Skipped: " -NoNewline
+        Write-Host $skipped -ForegroundColor Magenta -NoNewline
+        Write-Host " Pending: " -NoNewline
+        Write-Host $pending -ForegroundColor Cyan
+        $stopwatch.Stop()
+        if ($failed -gt 0)
+        {
+            throw "Some tests failed"
+        }
+    } else {
+        Invoke-Pester -Output Detailed -ErrorAction Stop
+        $stopwatch.Stop()
+    }
+    Write-Host "Elapsed: " + $stopwatch.Elapsed.ToString()
 }
 
 function Find-MakeAppx() {
