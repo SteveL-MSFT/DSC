@@ -30,6 +30,7 @@ use which::which;
 use crate::util::get_setting;
 use crate::util::get_exe_path;
 
+const DSC_ADAPTED_RESOURCE_EXTENSIONS: [&str; 3] = [".dsc.adaptedresource.json", ".dsc.adaptedresource.yaml", ".dsc.adaptedresource.yml"];
 const DSC_RESOURCE_EXTENSIONS: [&str; 3] = [".dsc.resource.json", ".dsc.resource.yaml", ".dsc.resource.yml"];
 const DSC_EXTENSION_EXTENSIONS: [&str; 3] = [".dsc.extension.json", ".dsc.extension.yaml", ".dsc.extension.yml"];
 
@@ -689,7 +690,7 @@ fn load_resource_manifest(path: &Path, manifest: &ResourceManifest) -> Result<Ds
     let resource = DscResource {
         type_name: manifest.resource_type.clone(),
         kind,
-        implemented_as: ImplementedAs::Command,
+        implemented_as: Some(ImplementedAs::Command),
         description: manifest.description.clone(),
         version: manifest.version.clone(),
         capabilities,

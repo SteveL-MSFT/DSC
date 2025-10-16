@@ -43,7 +43,7 @@ pub struct DscResource {
     pub directory: String,
     /// The implementation of the resource.
     #[serde(rename="implementedAs")]
-    pub implemented_as: ImplementedAs,
+    pub implemented_as: Option<ImplementedAs>,
     /// The author of the resource.
     pub author: Option<String>,
     /// The properties of the resource.
@@ -53,6 +53,8 @@ pub struct DscResource {
     pub require_adapter: Option<String>,
     /// The target resource for the resource adapter.
     pub target_resource: Option<String>,
+    /// The JSON schema of the resource.
+    pub schema: Option<Value>,
     /// The manifest of the resource.
     pub manifest: Option<Value>,
 }
@@ -91,19 +93,20 @@ impl DscResource {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            type_name: String::new(),
-            kind: Kind::Resource,
-            version: String::new(),
+            author: None,
             capabilities: Vec::new(),
             description: None,
-            path: String::new(),
             directory: String::new(),
-            implemented_as: ImplementedAs::Command,
-            author: None,
+            implemented_as: Some(ImplementedAs::Command),
+            kind: Kind::Resource,
+            manifest: None,
+            path: String::new(),
             properties: Vec::new(),
             require_adapter: None,
+            schema: None,
             target_resource: None,
-            manifest: None,
+            type_name: String::new(),
+            version: String::new(),
         }
     }
 
@@ -379,10 +382,10 @@ impl Invoke for DscResource {
         }
 
         match &self.implemented_as {
-            ImplementedAs::Custom(_custom) => {
+            Some(ImplementedAs::Custom(_custom)) => {
                 Err(DscError::NotImplemented(t!("dscresources.dscresource.customResourceNotSupported").to_string()))
             },
-            ImplementedAs::Command => {
+            Some(ImplementedAs::Command) | None => {
                 let Some(manifest) = &self.manifest else {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
@@ -399,10 +402,10 @@ impl Invoke for DscResource {
         }
 
         match &self.implemented_as {
-            ImplementedAs::Custom(_custom) => {
+            Some(ImplementedAs::Custom(_custom)) => {
                 Err(DscError::NotImplemented(t!("dscresources.dscresource.customResourceNotSupported").to_string()))
             },
-            ImplementedAs::Command => {
+            Some(ImplementedAs::Command) | None => {
                 let Some(manifest) = &self.manifest else {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
@@ -419,10 +422,10 @@ impl Invoke for DscResource {
         }
 
         match &self.implemented_as {
-            ImplementedAs::Custom(_custom) => {
+            Some(ImplementedAs::Custom(_custom)) => {
                 Err(DscError::NotImplemented(t!("dscresources.dscresource.customResourceNotSupported").to_string()))
             },
-            ImplementedAs::Command => {
+            Some(ImplementedAs::Command) | None => {
                 let Some(manifest) = &self.manifest else {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
@@ -468,10 +471,10 @@ impl Invoke for DscResource {
         }
 
         match &self.implemented_as {
-            ImplementedAs::Custom(_custom) => {
+            Some(ImplementedAs::Custom(_custom)) => {
                 Err(DscError::NotImplemented(t!("dscresources.dscresource.customResourceNotSupported").to_string()))
             },
-            ImplementedAs::Command => {
+            Some(ImplementedAs::Command) | None => {
                 let Some(manifest) = &self.manifest else {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
@@ -488,10 +491,10 @@ impl Invoke for DscResource {
         }
 
         match &self.implemented_as {
-            ImplementedAs::Custom(_custom) => {
+            Some(ImplementedAs::Custom(_custom)) => {
                 Err(DscError::NotImplemented(t!("dscresources.dscresource.customResourceNotSupported").to_string()))
             },
-            ImplementedAs::Command => {
+            Some(ImplementedAs::Command) | None => {
                 let Some(manifest) = &self.manifest else {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
@@ -508,10 +511,10 @@ impl Invoke for DscResource {
         }
 
         match &self.implemented_as {
-            ImplementedAs::Custom(_custom) => {
+            Some(ImplementedAs::Custom(_custom)) => {
                 Err(DscError::NotImplemented(t!("dscresources.dscresource.customResourceNotSupported").to_string()))
             },
-            ImplementedAs::Command => {
+            Some(ImplementedAs::Command) | None => {
                 let Some(manifest) = &self.manifest else {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
