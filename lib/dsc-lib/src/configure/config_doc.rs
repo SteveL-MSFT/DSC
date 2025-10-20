@@ -213,7 +213,15 @@ pub enum CopyMode {
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-pub struct Copy {
+pub struct CopyResource {
+    pub name: String,
+    pub count: i64,
+    pub input: Map<String, Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct CopyProperty {
     pub name: String,
     pub count: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -290,7 +298,7 @@ pub struct Resource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub copy: Option<Copy>,
+    pub copy: Option<CopyResource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
     #[serde(skip_serializing_if = "Option::is_none")]
