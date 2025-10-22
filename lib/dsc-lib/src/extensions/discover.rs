@@ -36,6 +36,15 @@ pub struct DiscoverMethod {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum DiscoverArgKind {
+    /// The argument is a string.
+    String(String),
+    ///
+
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, JsonSchema)]
 pub struct DiscoverResult {
     /// The path to the resource manifest, must be absolute.
     #[serde(rename = "manifestPath")]
