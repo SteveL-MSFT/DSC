@@ -34,6 +34,8 @@ pub struct DscResource {
     pub kind: Kind,
     /// The version of the resource.
     pub version: String,
+    /// An optional condition for the resource to be active.
+    pub condition: Option<String>,
     /// The capabilities of the resource.
     pub capabilities: Vec<Capability>,
     /// The file path to the resource.
@@ -56,6 +58,8 @@ pub struct DscResource {
     pub target_resource: Option<String>,
     /// The manifest of the resource.
     pub manifest: Option<Value>,
+    /// The JSON Schema of the resource.
+    pub schema: Option<Map<String, Value>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]
@@ -96,6 +100,7 @@ impl DscResource {
             type_name: String::new(),
             kind: Kind::Resource,
             version: String::new(),
+            condition: None,
             capabilities: Vec::new(),
             description: None,
             path: String::new(),
@@ -106,6 +111,7 @@ impl DscResource {
             require_adapter: None,
             target_resource: None,
             manifest: None,
+            schema: None,
         }
     }
 
@@ -706,6 +712,11 @@ pub fn get_diff(expected: &Value, actual: &Value) -> Vec<String> {
 pub fn validate_properties(resource: &DscResource, properties: &Value) -> Result<(), DscError> {
     // if so, see if it implements validate via the resource manifest
     let type_name = resource.type_name.clone();
+    if let Some(schema) = &resource.schema {
+        debug!("{}: {type_name} ", t!("dscresources.dscresource.validatingAgainstSchema"));
+        let schema = serde_json::to_value(schema)?;
+        return validate_json(&resource.type_name, &schema, properties);
+    }
     if let Some(manifest) = resource.manifest.clone() {
         // convert to resource_manifest``
         let manifest: ResourceManifest = serde_json::from_value(manifest)?;

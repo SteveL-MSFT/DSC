@@ -29,6 +29,7 @@ use which::which;
 use crate::util::get_setting;
 use crate::util::get_exe_path;
 
+const DSC_ADAPTED_RESOURCE_EXTENSIONS: [&str; 3] = [".dsc.adaptedresource.json", ".dsc.adaptedresource.yaml", ".dsc.adaptedresource.yml"];
 const DSC_EXTENSION_EXTENSIONS: [&str; 3] = [".dsc.extension.json", ".dsc.extension.yaml", ".dsc.extension.yml"];
 const DSC_MANIFEST_LIST_EXTENSIONS: [&str; 3] = [".dsc.manifests.json", ".dsc.manifests.yaml", ".dsc.manifests.yml"];
 const DSC_RESOURCE_EXTENSIONS: [&str; 3] = [".dsc.resource.json", ".dsc.resource.yaml", ".dsc.resource.yml"];
@@ -41,6 +42,8 @@ static ADAPTED_RESOURCES: LazyLock<RwLock<BTreeMap<String, Vec<DscResource>>>> =
 
 #[derive(Deserialize, JsonSchema)]
 pub struct ManifestList {
+    #[serde(rename = "adaptedResources")]
+    pub adapted_resources: Option<Vec<DscResource>>,
     pub resources: Option<Vec<ResourceManifest>>,
     pub extensions: Option<Vec<ExtensionManifest>>,
 }
@@ -255,7 +258,7 @@ impl ResourceDiscovery for CommandDiscovery {
                             };
                             let file_name_lowercase = file_name.to_lowercase();
                             if DSC_MANIFEST_LIST_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext)) ||
-                                (kind == &DiscoveryKind::Resource && (DSC_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext)))) ||
+                                (kind == &DiscoveryKind::Resource && (DSC_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext))) || DSC_ADAPTED_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext))) ||
                                 (kind == &DiscoveryKind::Extension && DSC_EXTENSION_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext))) {
                                 trace!("{}", t!("discovery.commandDiscovery.foundManifest", path = path.to_string_lossy()));
                                 let imported_manifests = match load_manifest(&path)
@@ -624,6 +627,24 @@ pub fn load_manifest(path: &Path) -> Result<Vec<ImportedManifest>, DscError> {
     let contents = fs::read_to_string(path)?;
     let file_name_lowercase = path.file_name().and_then(OsStr::to_str).unwrap_or("").to_lowercase();
     let extension_is_json = path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("json"));
+    if DSC_ADAPTED_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext)) {
+        let resource = if extension_is_json {
+            match serde_json::from_str::<DscResource>(&contents) {
+                Ok(resource) => resource,
+                Err(err) => {
+                    return Err(DscError::InvalidManifest(t!("discovery.commandDiscovery.invalidAdaptedResourceManifest", resource = path.to_string_lossy(), err = err).to_string()));
+                }
+            }
+        } else {
+            match serde_yaml::from_str::<DscResource>(&contents) {
+                Ok(resource) => resource,
+                Err(err) => {
+                    return Err(DscError::InvalidManifest(t!("discovery.commandDiscovery.invalidAdaptedResourceManifest", resource = path.to_string_lossy(), err = err).to_string()));
+                }
+            }
+        };
+        return Ok(vec![ImportedManifest::Resource(resource)]);
+    }
     if DSC_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext)) {
         let manifest = if extension_is_json {
             match serde_json::from_str::<ResourceManifest>(&contents) {
@@ -679,6 +700,11 @@ pub fn load_manifest(path: &Path) -> Result<Vec<ImportedManifest>, DscError> {
             }
         };
         let mut resources = vec![];
+        if let Some(adapted_resources) = &manifest_list.adapted_resources {
+            for resource in adapted_resources {
+                resources.push(ImportedManifest::Resource(resource.clone()));
+            }
+        }
         if let Some(resource_manifests) = &manifest_list.resources {
             for res_manifest in resource_manifests {
                 let resource = load_resource_manifest(path, res_manifest)?;
