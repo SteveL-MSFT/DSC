@@ -336,6 +336,24 @@ else {
     $target = Join-Path $PSScriptRoot 'bin' $architecture $configuration
 }
 
+function Convert-Manifest($manifestFile, $targetFolder) {
+    $manifest = Get-Content $manifestFile -Raw | ConvertFrom-Json
+    if ($null -ne $manifest.schema -and $null -ne $manifest.schema.command) {
+        $args = if ($null -ne $manifest.schema.command.args) {
+            $manifest.schema.command.args
+        } else {
+            @()
+        }
+        $schema = & $manifest.schema.command @args | ConvertFrom-Json
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to get schema from command: $($manifest.schema.command) $args"
+        }
+        $manifest.schema = $schema
+    }
+    $target = Join-Path $targetFolder (Split-Path $manifestFile -Leaf)
+    $manifest | ConvertTo-Json -Depth 100 | Set-Content $target -Force
+}
+
 if (!$SkipBuild) {
     if ($architecture -ne 'Current' -and !$usingADO) {
         & $rustup target add --toolchain $channel $architecture
@@ -353,7 +371,7 @@ if (!$SkipBuild) {
 
     # projects are in dependency order
     $projects = @(
-        ".",
+        "y2j",
         "grammars/tree-sitter-dscexpression",
         "grammars/tree-sitter-ssh-server-config",
         "lib/dsc-lib-jsonschema",
@@ -370,8 +388,7 @@ if (!$SkipBuild) {
         "resources/runcommandonset",
         "resources/sshdconfig",
         "tools/dsctest",
-        "tools/test_group_resource",
-        "y2j"
+        "tools/test_group_resource"
     )
     $pedantic_unclean_projects = @()
     $clippy_unclean_projects = @("grammars/tree-sitter-dscexpression", "grammars/tree-sitter-ssh-server-config")
@@ -498,12 +515,14 @@ if (!$SkipBuild) {
                 }
             }
 
-            if ($IsWindows) {
-                Copy-Item "*.dsc.resource.json" $target -Force -ErrorAction Ignore
+            $exclude = if ($IsWindows) {
+                @()
+            } else {
+                @('windowspowershell.dsc.resource.json', 'winpsscript.dsc.resource.json')
             }
-            else { # don't copy WindowsPowerShell resource manifest
-                $exclude = @('windowspowershell.dsc.resource.json', 'winpsscript.dsc.resource.json')
-                Copy-Item "*.dsc.resource.json" $target -Exclude $exclude -Force -ErrorAction Ignore
+
+            Get-ChildItem '*.dsc.extension.json' -Exclude $exclude | ForEach-Object {
+                Convert-Manifest $_ $target
             }
 
             # be sure that the files that should be executable are executable

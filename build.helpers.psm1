@@ -1016,7 +1016,7 @@ function Export-GrammarBinding {
             } finally {
                 Pop-Location
             }
-            
+
         }
     }
 
@@ -1791,3 +1791,21 @@ function Build-DscPackage {
     }
 }
 #endregion Package project functions
+
+function Convert-Manifest($manifestFile, $targetFolder) {
+    $manifest = Get-Content $manifestFile -Raw | ConvertFrom-Json
+    if ($null -ne $manifest.schema -and $null -ne $manifest.schema.command) {
+        $args = if ($null -ne $manifest.schema.command.args) {
+            $manifest.schema.command.args
+        } else {
+            @()
+        }
+        $schema = & $manifest.schema.command @args | ConvertFrom-Json
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to get schema from command: $($manifest.schema.command) $args"
+        }
+        $manifest.schema = $schema
+    }
+    $target = Join-Path $targetFolder (Split-Path $manifestFile -Leaf)
+    $manifest | ConvertTo-Json -Depth 100 | Set-Content $target -Force
+}
