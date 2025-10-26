@@ -208,6 +208,8 @@ adapterResourceNotFound = "Adapter resource '%{adapter}' not found"
 adapterManifestNotFound = "Adapter manifest for '%{adapter}' not found"
 adapterDoesNotSupportDelete = "Adapter '%{adapter}' does not support delete operation"
 validatingAgainstSchema = "Validating against resource schema"
+expectPath = "Resource '%{resource}' does not have a valid path"
+expectDirectory = "Resource '%{resource}' does not have a valid directory"
 
 [dscresources.resource_manifest]
 resourceManifestSchemaTitle = "Resource manifest schema URI"

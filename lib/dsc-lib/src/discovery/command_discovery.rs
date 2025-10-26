@@ -410,7 +410,7 @@ impl ResourceDiscovery for CommandDiscovery {
                 let mut adapter_resources_count = 0;
                 // invoke the list command
                 let list_command = manifest.adapter.unwrap().list;
-                let (exit_code, stdout, stderr) = match invoke_command(&list_command.executable, list_command.args, None, Some(&adapter.directory), None, manifest.exit_codes.as_ref())
+                let (exit_code, stdout, stderr) = match invoke_command(&list_command.executable, list_command.args, None, Some(&adapter.directory()), None, manifest.exit_codes.as_ref())
                 {
                     Ok((exit_code, stdout, stderr)) => (exit_code, stdout, stderr),
                     Err(e) => {
@@ -628,7 +628,7 @@ pub fn load_manifest(path: &Path) -> Result<Vec<ImportedManifest>, DscError> {
     let file_name_lowercase = path.file_name().and_then(OsStr::to_str).unwrap_or("").to_lowercase();
     let extension_is_json = path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("json"));
     if DSC_ADAPTED_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext)) {
-        let resource = if extension_is_json {
+        let mut resource = if extension_is_json {
             match serde_json::from_str::<DscResource>(&contents) {
                 Ok(resource) => resource,
                 Err(err) => {
@@ -643,6 +643,8 @@ pub fn load_manifest(path: &Path) -> Result<Vec<ImportedManifest>, DscError> {
                 }
             }
         };
+        resource.set_paths(path.to_str().unwrap().to_string(), path.parent().unwrap().to_str().unwrap().to_string());
+        // TODO: add `condition` evaluation
         return Ok(vec![ImportedManifest::Resource(resource)]);
     }
     if DSC_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext)) {
@@ -702,6 +704,7 @@ pub fn load_manifest(path: &Path) -> Result<Vec<ImportedManifest>, DscError> {
         let mut resources = vec![];
         if let Some(adapted_resources) = &manifest_list.adapted_resources {
             for resource in adapted_resources {
+                // TODO: add `condition` evalutation
                 resources.push(ImportedManifest::Resource(resource.clone()));
             }
         }
@@ -771,18 +774,17 @@ fn load_resource_manifest(path: &Path, manifest: &ResourceManifest) -> Result<Ds
         verify_executable(&manifest.resource_type, "schema", &command.executable);
     }
 
-    let resource = DscResource {
+    let mut resource = DscResource {
         type_name: manifest.resource_type.clone(),
         kind,
         implemented_as: ImplementedAs::Command,
         description: manifest.description.clone(),
         version: manifest.version.clone(),
         capabilities,
-        path: path.to_str().unwrap().to_string(),
-        directory: path.parent().unwrap().to_str().unwrap().to_string(),
         manifest: Some(serde_json::to_value(manifest)?),
         ..Default::default()
     };
+    resource.set_paths(path.to_str().unwrap().to_string(), path.parent().unwrap().to_str().unwrap().to_string());
 
     Ok(resource)
 }

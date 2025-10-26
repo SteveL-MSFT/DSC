@@ -38,12 +38,12 @@ pub struct DscResource {
     pub condition: Option<String>,
     /// The capabilities of the resource.
     pub capabilities: Vec<Capability>,
-    /// The file path to the resource.
-    pub path: String,
     /// The description of the resource.
     pub description: Option<String>,
+    /// The file path to the resource.
+    path: Option<String>,
     // The directory path to the resource.
-    pub directory: String,
+    directory: Option<String>,
     /// The implementation of the resource.
     #[serde(rename="implementedAs")]
     pub implemented_as: ImplementedAs,
@@ -103,8 +103,8 @@ impl DscResource {
             condition: None,
             capabilities: Vec::new(),
             description: None,
-            path: String::new(),
-            directory: String::new(),
+            path: None,
+            directory: None,
             implemented_as: ImplementedAs::Command,
             author: None,
             properties: Vec::new(),
@@ -113,6 +113,38 @@ impl DscResource {
             manifest: None,
             schema: None,
         }
+    }
+
+    /// Sets the paths for the resource.
+    ///
+    /// # Arguments
+    /// * `path` - The file path to the resource.
+    /// * `directory` - The directory path to the resource.
+    pub fn set_paths(&mut self, path: String, directory: String) {
+        self.path = Some(path);
+        self.directory = Some(directory);
+    }
+
+    /// Gets the path of the resource.
+    ///
+    /// # Returns
+    /// The path of the resource.
+    ///
+    /// # Panics
+    /// This function will panic if the path is not set.
+    pub fn path(&self) -> &String {
+        self.path.as_ref().expect(t!("dscresources.dscresource.expectPath", resource = self.type_name))
+    }
+
+    /// Gets the directory of the resource.
+    ///
+    /// # Returns
+    /// The directory of the resource.
+    ///
+    /// # Panics
+    /// This function will panic if the directory is not set.
+    pub fn directory(&self) -> &String {
+        self.directory.as_ref().expect(t!("dscresources.dscresource.expectDirectory", resource = self.type_name))
     }
 
     fn create_config_for_adapter(self, adapter: &str, input: &str) -> Result<Configurator, DscError> {
@@ -395,7 +427,7 @@ impl Invoke for DscResource {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
                 let resource_manifest = import_manifest(manifest.clone())?;
-                command_resource::invoke_get(&resource_manifest, &self.directory, filter, self.target_resource.as_deref())
+                command_resource::invoke_get(&resource_manifest, self.directory(), filter, self.target_resource.as_deref())
             },
         }
     }
@@ -415,7 +447,7 @@ impl Invoke for DscResource {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
                 let resource_manifest = import_manifest(manifest.clone())?;
-                command_resource::invoke_set(&resource_manifest, &self.directory, desired, skip_test, execution_type, self.target_resource.as_deref())
+                command_resource::invoke_set(&resource_manifest, self.directory(), desired, skip_test, execution_type, self.target_resource.as_deref())
             },
         }
     }
@@ -463,7 +495,7 @@ impl Invoke for DscResource {
                     Ok(test_result)
                 }
                 else {
-                    command_resource::invoke_test(&resource_manifest, &self.directory, expected, self.target_resource.as_deref())
+                    command_resource::invoke_test(&resource_manifest, self.directory(), expected, self.target_resource.as_deref())
                 }
             },
         }
@@ -484,7 +516,7 @@ impl Invoke for DscResource {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
                 let resource_manifest = import_manifest(manifest.clone())?;
-                command_resource::invoke_delete(&resource_manifest, &self.directory, filter, self.target_resource.as_deref())
+                command_resource::invoke_delete(&resource_manifest, self.directory(), filter, self.target_resource.as_deref())
             },
         }
     }
@@ -504,7 +536,7 @@ impl Invoke for DscResource {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
                 let resource_manifest = import_manifest(manifest.clone())?;
-                command_resource::invoke_validate(&resource_manifest, &self.directory, config, self.target_resource.as_deref())
+                command_resource::invoke_validate(&resource_manifest, self.directory(), config, self.target_resource.as_deref())
             },
         }
     }
@@ -524,7 +556,7 @@ impl Invoke for DscResource {
                     return Err(DscError::MissingManifest(self.type_name.clone()));
                 };
                 let resource_manifest = import_manifest(manifest.clone())?;
-                command_resource::get_schema(&resource_manifest, &self.directory)
+                command_resource::get_schema(&resource_manifest, self.directory())
             },
         }
     }
@@ -539,7 +571,7 @@ impl Invoke for DscResource {
             return Err(DscError::MissingManifest(self.type_name.clone()));
         };
         let resource_manifest = import_manifest(manifest.clone())?;
-        command_resource::invoke_export(&resource_manifest, &self.directory, Some(input), self.target_resource.as_deref())
+        command_resource::invoke_export(&resource_manifest, self.directory(), Some(input), self.target_resource.as_deref())
     }
 
     fn resolve(&self, input: &str) -> Result<ResolveResult, DscError> {
@@ -552,7 +584,7 @@ impl Invoke for DscResource {
             return Err(DscError::MissingManifest(self.type_name.clone()));
         };
         let resource_manifest = import_manifest(manifest.clone())?;
-        command_resource::invoke_resolve(&resource_manifest, &self.directory, input)
+        command_resource::invoke_resolve(&resource_manifest, self.directory(), input)
     }
 }
 

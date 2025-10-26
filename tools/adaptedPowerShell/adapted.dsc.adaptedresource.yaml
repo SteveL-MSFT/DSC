@@ -1,0 +1,20 @@
+type: Test/AdaptedResource
+kind: resource
+version: 0.0.1
+capabilities:
+- export
+- get
+author: 'Microsoft'
+requireAdapter: Microsoft.DSC/PowerShell
+description: Example adapted resource
+schema:
+    $schema: https://json-schema.org/draft/2020-12/schema
+    title: AdaptedResource
+    type: object
+    properties:
+        Name:
+            type: string
+            description: Name of the resource
+        PowerShellVersion:
+            type: string
+            description: The version of PowerShell
