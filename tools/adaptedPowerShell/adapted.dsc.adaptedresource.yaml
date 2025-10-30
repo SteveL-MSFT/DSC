@@ -1,12 +1,14 @@
-type: Test/AdaptedResource
+type: Adapted/PSTestResource
 kind: resource
 version: 0.0.1
 capabilities:
 - export
 - get
 author: 'Microsoft'
-requireAdapter: Microsoft.DSC/PowerShell
+requireAdapter: Microsoft.DSC/PowerShellResource
+requireAdapterVersion: '1'
 description: Example adapted resource
+path: adapted.psd1
 schema:
     $schema: https://json-schema.org/draft/2020-12/schema
     title: AdaptedResource

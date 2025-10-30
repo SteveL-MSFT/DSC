@@ -12,7 +12,7 @@ class TestPSResource {
     [TestPSResource] Get() {
         $result = [TestPSResource]::new()
         $result.Name = 'Example'
-        $result.PowerShellVersion = $PSVersionTable.PSVersion.ToString()
+        $result.PowerShellVersion = $global:PSVersionTable.PSVersion.ToString()
         return $result
     }
 
@@ -27,7 +27,7 @@ class TestPSResource {
     static [TestPSResource[]]Export() {
         return @([TestPSResource]@{
             Name = "Example"
-            PowerShellVersion = $PSVersionTable.PSVersion.ToString()
+            PowerShellVersion = $global:PSVersionTable.PSVersion.ToString()
         })
     }
 }

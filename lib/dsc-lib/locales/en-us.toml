@@ -102,6 +102,7 @@ foundManifest = "Found manifest: %{path}"
 extensionFound = "Extension '%{extension}' version %{version} found"
 adapterFound = "Resource adapter '%{adapter}' version %{version} found"
 resourceFound = "Resource '%{resource}' version %{version} found"
+adaptedResourceFound = "Adapted resource '%{resource}' version %{version} found"
 executableNotFound = "Executable '%{executable}' not found for operation '%{operation}' for resource '%{resource}'"
 extensionInvalidVersion = "Extension '%{extension}' version '%{version}' is invalid"
 invalidAdaptedResourceManifest = "Invalid manifest for adapted resource '%{resource}'"
@@ -119,6 +120,9 @@ foundResourceWithVersion = "Found matching resource '%{resource}' version %{vers
 foundNonAdapterResources = "Found %{count} non-adapter resources"
 resourceMissingRequireAdapter = "Resource '%{resource}' is missing 'require_adapter' field."
 extensionDiscoverFailed = "Extension '%{extension}' failed to discover resources: %{error}"
+adaptedMissingRequireAdapter = "Adapted resource manifest '%{resource}' missing required 'requireAdapter' property"
+adaptedResourcePathNotFound = "Adapted resource '%{resource}' path not found: %{path}"
+failedToConvertOsStr = "Failed to convert OsStr to str: %{path}"
 
 [dscresources.commandResource]
 invokeGet = "Invoking get for '%{resource}'"

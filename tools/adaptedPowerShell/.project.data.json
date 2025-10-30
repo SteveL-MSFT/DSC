@@ -1,0 +1,12 @@
+{
+    "Name": "Test/AdaptedPowerShell",
+    "Kind": "Resource",
+    "TestOnly": true,
+    "CopyFiles": {
+        "All": [
+            "adapted.dsc.adaptedresource.yaml",
+            "adapted.psm1",
+            "adapted.psd1"
+        ]
+    }
+}

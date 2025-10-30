@@ -4,7 +4,7 @@
 use crate::{discovery::discovery_trait::{DiscoveryFilter, DiscoveryKind, ResourceDiscovery}};
 use crate::{locked_is_empty, locked_extend, locked_clone, locked_get};
 use crate::dscresources::dscresource::{Capability, DscResource, ImplementedAs};
-use crate::dscresources::resource_manifest::{import_manifest, validate_semver, Kind, ResourceManifest, SchemaKind};
+use crate::dscresources::resource_manifest::{validate_semver, Kind, ResourceManifest, SchemaKind};
 use crate::dscresources::command_resource::invoke_command;
 use crate::dscerror::DscError;
 use crate::extensions::dscextension::{self, DscExtension, Capability as ExtensionCapability};
@@ -297,14 +297,17 @@ impl ResourceDiscovery for CommandDiscovery {
                                         },
                                         ImportedManifest::Resource(resource) => {
                                             if regex.is_match(&resource.type_name) {
-                                                if let Some(ref manifest) = resource.manifest {
-                                                    let manifest = import_manifest(manifest.clone())?;
+                                                if let Some(ref manifest) = &resource.manifest {
                                                     if manifest.kind == Some(Kind::Adapter) {
                                                         trace!("{}", t!("discovery.commandDiscovery.adapterFound", adapter = resource.type_name, version = resource.version));
                                                         insert_resource(&mut adapters, &resource);
                                                     }
                                                     // also make sure to add adapters as a resource as well
                                                     trace!("{}", t!("discovery.commandDiscovery.resourceFound", resource = resource.type_name, version = resource.version));
+                                                    insert_resource(&mut resources, &resource);
+                                                }
+                                                if let Some(_adapter) = &resource.require_adapter {
+                                                    trace!("{}", t!("discovery.commandDiscovery.adaptedResourceFound", resource = resource.type_name, version = resource.version));
                                                     insert_resource(&mut resources, &resource);
                                                 }
                                             }
@@ -397,20 +400,14 @@ impl ResourceDiscovery for CommandDiscovery {
                 info!("Enumerating resources for adapter '{}'", adapter_name);
                 let mut adapter_progress = ProgressBar::new(1, self.progress_format)?;
                 adapter_progress.write_activity(format!("Enumerating resources for adapter '{adapter_name}'").as_str());
-                let manifest = if let Some(manifest) = &adapter.manifest {
-                    if let Ok(manifest) = import_manifest(manifest.clone()) {
-                        manifest
-                    } else {
-                        return Err(DscError::Operation(format!("Failed to import manifest for '{}'", adapter_name.clone())));
-                    }
-                } else {
+                let Some(manifest) = &adapter.manifest else {
                     return Err(DscError::MissingManifest(adapter_name.clone()));
                 };
 
                 let mut adapter_resources_count = 0;
                 // invoke the list command
-                let list_command = manifest.adapter.unwrap().list;
-                let (exit_code, stdout, stderr) = match invoke_command(&list_command.executable, list_command.args, None, Some(&adapter.directory()), None, manifest.exit_codes.as_ref())
+                let list_command = &manifest.adapter.clone().unwrap().list;
+                let (exit_code, stdout, stderr) = match invoke_command(&list_command.executable, list_command.args.clone(), None, Some(&adapter.directory()), None, manifest.exit_codes.as_ref())
                 {
                     Ok((exit_code, stdout, stderr)) => (exit_code, stdout, stderr),
                     Err(e) => {
@@ -625,7 +622,7 @@ fn insert_resource(resources: &mut BTreeMap<String, Vec<DscResource>>, resource:
 /// * Returns a `DscError` if the manifest could not be loaded or parsed.
 pub fn load_manifest(path: &Path) -> Result<Vec<ImportedManifest>, DscError> {
     let contents = fs::read_to_string(path)?;
-    let file_name_lowercase = path.file_name().and_then(OsStr::to_str).unwrap_or("").to_lowercase();
+    let file_name_lowercase = path.file_name().and_then(OsStr::to_str).expect(t!("discovery.commandDiscovery.failedToConvertOsStr", path = path.to_string_lossy()).to_string().as_str()).to_lowercase();
     let extension_is_json = path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("json"));
     if DSC_ADAPTED_RESOURCE_EXTENSIONS.iter().any(|ext| file_name_lowercase.ends_with(ext)) {
         let mut resource = if extension_is_json {
@@ -643,7 +640,16 @@ pub fn load_manifest(path: &Path) -> Result<Vec<ImportedManifest>, DscError> {
                 }
             }
         };
-        resource.set_paths(path.to_str().unwrap().to_string(), path.parent().unwrap().to_str().unwrap().to_string());
+        if resource.require_adapter.is_none() {
+            return Err(DscError::InvalidManifest(t!("discovery.commandDiscovery.adaptedMissingRequireAdapter", resource = path.to_string_lossy()).to_string()));
+        }
+        let directory = path.parent().unwrap();
+        let path = directory.join(resource.path.clone());
+        if !path.exists() {
+            return Err(DscError::InvalidManifest(t!("discovery.commandDiscovery.adaptedResourcePathNotFound", path = path.to_string_lossy(), resource = resource.type_name).to_string()));
+        }
+        resource.path = path.to_str().unwrap().to_string();
+        resource.directory = Some(directory.to_str().unwrap().to_string());
         // TODO: add `condition` evaluation
         return Ok(vec![ImportedManifest::Resource(resource)]);
     }
@@ -774,17 +780,18 @@ fn load_resource_manifest(path: &Path, manifest: &ResourceManifest) -> Result<Ds
         verify_executable(&manifest.resource_type, "schema", &command.executable);
     }
 
-    let mut resource = DscResource {
+    let resource = DscResource {
         type_name: manifest.resource_type.clone(),
         kind,
-        implemented_as: ImplementedAs::Command,
+        implemented_as: Some(ImplementedAs::Command),
         description: manifest.description.clone(),
         version: manifest.version.clone(),
         capabilities,
-        manifest: Some(serde_json::to_value(manifest)?),
+        manifest: Some(manifest.clone()),
+        path: path.to_str().unwrap().to_string(),
+        directory: Some(path.parent().unwrap().to_str().unwrap().to_string()),
         ..Default::default()
     };
-    resource.set_paths(path.to_str().unwrap().to_string(), path.parent().unwrap().to_str().unwrap().to_string());
 
     Ok(resource)
 }

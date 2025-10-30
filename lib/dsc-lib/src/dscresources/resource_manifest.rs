@@ -94,6 +94,11 @@ pub enum ArgKind {
         /// The argument that accepts the resource type name.
         #[serde(rename = "resourceTypeArg")]
         resource_type_arg: String,
+    },
+    ResourcePath {
+        /// The argument that accepts the resource path.
+        #[serde(rename = "resourcePathArg")]
+        resource_path_arg: String,
     }
 }
 
@@ -273,29 +278,6 @@ impl DscRepoSchema for ResourceManifest {
             ))
         }
     }
-}
-
-/// Import a resource manifest from a JSON value.
-///
-/// # Arguments
-///
-/// * `manifest` - The JSON value to import.
-///
-/// # Returns
-///
-/// * `Result<ResourceManifest, DscError>` - The imported resource manifest.
-///
-/// # Errors
-///
-/// * `DscError` - The JSON value is invalid or the schema version is not supported.
-pub fn import_manifest(manifest: Value) -> Result<ResourceManifest, DscError> {
-    // TODO: enable schema version validation, if not provided, use the latest
-    // const MANIFEST_SCHEMA_VERSION: &str = "https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2024/04/bundled/resource/manifest.json";
-    let manifest = serde_json::from_value::<ResourceManifest>(manifest)?;
-    // if !manifest.schema_version.eq(MANIFEST_SCHEMA_VERSION) {
-    //     return Err(DscError::InvalidManifestSchemaVersion(manifest.schema_version, MANIFEST_SCHEMA_VERSION.to_string()));
-    // }
-    Ok(manifest)
 }
 
 /// Validate a semantic version string.
