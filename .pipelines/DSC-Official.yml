@@ -67,9 +67,48 @@ extends:
           enabled: false
 
     stages:
+    # Since the actual build depends on tree-sitter-cli and its dependencies aren't automatically pulled into CFS (due to being installed by cargo),
+    # we need to build tree-sitter-cli first in its own stage so that its dependent crates are cached in CFS for the subsequent build stages.
+    - stage: BuildTreeSitter
+      displayName: Build tree-sitter-cli
+      dependsOn: []
+      jobs:
+      - job: BuildTreeSitterJob
+        displayName: Build tree-sitter-cli
+        pool:
+          type: linux
+        steps:
+        - task: RustInstaller@1
+          inputs:
+            rustVersion: ms-stable
+            toolchainFeed: $(Rust.SDK)
+          displayName: Install Rust
+          env:
+            ob_restore_phase: true
+        - task: AzureCLI@2
+          displayName: Get Az Token
+          inputs:
+            azureSubscription: PowerShell-CICD-Feed-Access
+            scriptType: pscore
+            scriptLocation: inlineScript
+            inlineScript: |
+              $token = az account get-access-token --query accessToken --resource 499b84ac-1321-427f-aa17-267ca6975798 -o tsv
+              $vstsCommandString = "vso[task.setvariable variable=AzToken;isoutput=true]$token"
+              Write-Host "Setting token"
+              Write-Host "##$vstsCommandString"
+        - pwsh: |
+            git clone https://github.com/tree-sitter/tree-sitter.git
+            cd tree-sitter
+            $env:CARGO_REGISTRIES_POWERSHELL_CREDENTIAL_PROVIDER = 'cargo:token'
+            $header = "Bearer $(AzToken)"
+            $env:CARGO_REGISTRIES_POWERSHELL_TOKEN = $header
+            $env:CARGO_REGISTRIES_POWERSHELL_INDEX = 'https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/PowerShell-Cargo-Registry/p2/Crates/index'
+            $env:CARGO_SOURCE_crates_io_REPLACE_WITH = 'POWERSHELL'
+            cargo build
+
     - stage: BuildAndSign
       displayName: Build Native Binaries
-      dependsOn: []
+      dependsOn: BuildTreeSitter
       jobs:
       - job: SetPackageVersion
         displayName: Set PackageVersion
