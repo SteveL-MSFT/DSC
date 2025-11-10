@@ -77,6 +77,12 @@ extends:
         displayName: Build tree-sitter-cli
         pool:
           type: linux
+        variables:
+          ob_restore_phase: true
+          ob_outputDirectory: '$(Build.ArtifactStagingDirectory)'
+          ob_sdl_sbom_enabled: false
+          ob_signing_setup_enabled: false
+          ob_sdl_codeql_compiled_enabled: false
         steps:
         - task: RustInstaller@1
           inputs:
