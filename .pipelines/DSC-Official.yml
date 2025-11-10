@@ -109,7 +109,7 @@ extends:
             $env:CARGO_REGISTRIES_POWERSHELL_CREDENTIAL_PROVIDER = 'cargo:token'
             $header = "Bearer $(AzToken)"
             $env:CARGO_REGISTRIES_POWERSHELL_TOKEN = $header
-            $env:CARGO_REGISTRIES_POWERSHELL_INDEX = 'https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/PowerShell-Cargo-Registry/p2/Crates/index'
+            $env:CARGO_REGISTRIES_POWERSHELL_INDEX = "sparse+https://pkgs.dev.azure.com/powershell/PowerShell/_packaging/powershell/Cargo/index/"
             $env:CARGO_SOURCE_crates_io_REPLACE_WITH = 'POWERSHELL'
             cargo build
 
