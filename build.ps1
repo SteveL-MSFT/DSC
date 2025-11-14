@@ -619,7 +619,7 @@ if ($Test) {
 
     # On Windows disable duplicated WinPS resources that break PSDesiredStateConfiguration module
     if ($IsWindows) {
-        $a = $env:PSModulePath -split ";" | ? { $_ -notmatch 'WindowsPowerShell' }
+        $a = $env:PSModulePath -split ";" | Where-Object { $_ -notmatch 'WindowsPowerShell' }
         $env:PSModulePath = $a -join ';'
 
         "Updated PSModulePath is:"
