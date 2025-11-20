@@ -24,16 +24,11 @@ use tracing::debug;
 ///
 /// * `DscError::Validation` - The configuration is invalid
 pub fn get_resource_invocation_order(config: &Configuration, parser: &mut Statement, context: &Context) -> Result<Vec<Resource>, DscError> {
-    debug!("Getting resource invocation order");
+    debug!("{}", t!("configure.dependsOn.gettingResourceOrder"));
     let mut order: Vec<Resource> = Vec::new();
     for resource in &config.resources {
-        // validate that the resource isn't specified more than once in the config
-        if config.resources.iter().filter(|r| r.name == resource.name && r.resource_type == resource.resource_type).count() > 1 {
-            return Err(DscError::Validation(t!("configure.dependsOn.duplicateResource", name = resource.name, type_name = resource.resource_type).to_string()));
-        }
-
         let mut dependency_already_in_order = true;
-        if let Some(depends_on) = resource.depends_on.clone() {
+        if let Some(depends_on) = resource.depends_on.as_ref() {
             for dependency in depends_on {
                 let statement = parser.parse_and_execute(&dependency, context)?;
                 let Some(string_result) = statement.as_str() else {
@@ -41,21 +36,24 @@ pub fn get_resource_invocation_order(config: &Configuration, parser: &mut Statem
                 };
                 let (resource_type, resource_name) = get_type_and_name(string_result)?;
 
-                // find the resource by name
-                let Some(dependency_resource) = config.resources.iter().find(|r| r.name.eq(&resource_name)) else {
+                // find the resources by name
+                let dependency_resources: Vec<Resource> = config.resources.iter().filter(|r| r.name.eq(&resource_name) && r.resource_type.eq(&resource_type)).cloned().collect();
+                if dependency_resources.is_empty() {
                     return Err(DscError::Validation(t!("configure.dependsOn.dependencyNotFound", dependency_name = resource_name, resource_name = resource.name).to_string()));
-                };
-                // validate the type matches
-                if dependency_resource.resource_type != resource_type {
-                    return Err(DscError::Validation(t!("configure.dependsOn.dependencyTypeMismatch", resource_type = resource_type, dependency_type = dependency_resource.resource_type, resource_name = resource.name).to_string()));
                 }
-                // see if the dependency is already in the order
-                if order.iter().any(|r| r.name == resource_name && r.resource_type == resource_type) {
-                    continue;
+                // see if all the dependencies is already in the order, if already in the order, skip adding them again
+                for dependency_resource in &dependency_resources {
+                    if !order.iter().any(|r| r.name == dependency_resource.name && r.resource_type == dependency_resource.resource_type) {
+                        dependency_already_in_order = false;
+                    }
                 }
-                // add the dependency to the order
-                order.push(dependency_resource.clone());
-                dependency_already_in_order = false;
+                // add all the dependencies to the order
+                for dependency_resource in &dependency_resources {
+                    if order.iter().any(|r| r.name == dependency_resource.name && r.resource_type == dependency_resource.resource_type) {
+                        continue;
+                    }
+                    order.push(dependency_resource.clone());
+                }
             }
         }
 
