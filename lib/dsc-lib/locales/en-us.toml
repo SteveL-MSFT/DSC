@@ -31,7 +31,7 @@ syntaxIncorrect = "'dependsOn' syntax is incorrect: %{dependency}"
 dependencyNotFound = "'dependsOn' resource name '%{dependency_name}' does not exist for resource named '%{resource_name}'"
 dependencyTypeMismatch = "'dependsOn' resource type '%{resource_type}' does not match resource type '%{dependency_type}' for resource named '%{resource_name}'"
 resourceNotInOrder = "Resource not found in order"
-dependencyNotInOrder = "Dependency not found in order"
+dependencyNotInOrder = "Dependency '%{dependency_name}' not found in invocation order for resource named '%{resource_name}'"
 circularDependency = "Circular dependency detected for resource named '%{resource}'"
 invocationOrder = "Resource invocation order"
 

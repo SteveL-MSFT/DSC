@@ -42,16 +42,25 @@ pub fn get_resource_invocation_order(config: &Configuration, parser: &mut Statem
                     return Err(DscError::Validation(t!("configure.dependsOn.dependencyNotFound", dependency_name = resource_name, resource_name = resource.name).to_string()));
                 }
                 // see if all the dependencies is already in the order, if already in the order, skip adding them again
-                for dependency_resource in &dependency_resources {
-                    if !order.iter().any(|r| r.name == dependency_resource.name && r.resource_type == dependency_resource.resource_type) {
-                        dependency_already_in_order = false;
+                // in the case of duplicate names, they are all or none
+                let mut found_dependency = 0;
+                for ordered_resource in &order {
+                    if ordered_resource.name == dependency_resources[0].name && ordered_resource.resource_type == dependency_resources[0].resource_type {
+                        found_dependency += 1;
+                        break;
                     }
+                }
+                // make sure the count matches in case of duplicate names or zero if not already in order
+                if found_dependency == 0 {
+                    dependency_already_in_order = false;
+                } else if found_dependency == dependency_resources.len() {
+                  dependency_already_in_order = true;
+                  continue;
+                } else {
+                  return Err(DscError::Validation(t!("configure.dependsOn.dependencyNotInOrder", dependency_name = dependency_resources[0].name, resource_name = resource.name).to_string()));
                 }
                 // add all the dependencies to the order
                 for dependency_resource in &dependency_resources {
-                    if order.iter().any(|r| r.name == dependency_resource.name && r.resource_type == dependency_resource.resource_type) {
-                        continue;
-                    }
                     order.push(dependency_resource.clone());
                 }
             }
@@ -72,7 +81,7 @@ pub fn get_resource_invocation_order(config: &Configuration, parser: &mut Statem
                       return Err(DscError::Validation(t!("configure.dependsOn.syntaxIncorrect", dependency = dependency).to_string()));
                   };
                   let (resource_type, resource_name) = get_type_and_name(string_result)?;
-                  let dependency_index = order.iter().position(|r| r.name == resource_name && r.resource_type == resource_type).ok_or(DscError::Validation(t!("configure.dependsOn.dependencyNotInOrder").to_string()))?;
+                  let dependency_index = order.iter().position(|r| r.name == resource_name && r.resource_type == resource_type).ok_or(DscError::Validation(t!("configure.dependsOn.dependencyNotInOrder", dependency_name = resource_name, resource_name = resource.name).to_string()))?;
                   if resource_index < dependency_index {
                       return Err(DscError::Validation(t!("configure.dependsOn.circularDependency", resource_name = resource.name).to_string()));
                   }
@@ -87,6 +96,33 @@ pub fn get_resource_invocation_order(config: &Configuration, parser: &mut Statem
 
     debug!("{}: {order:?}", t!("configure.dependsOn.invocationOrder"));
     Ok(order)
+}
+
+fn insert_dependency_in_order(resources: &Vec<Resource>, order: &mut Vec<Resource>, dependency: &Resource, parser: &mut Statement, context: &Context) -> Result<(), DscError> {
+    // check if the dependency is already in the order
+    if order.iter().any(|r| r == dependency) {
+        return Ok(());
+    }
+    // if it has dependencies, insert them first
+    if let Some(depends_on) = dependency.depends_on.as_ref() {
+        for dep in depends_on {
+            let statement = parser.parse_and_execute(dep, context).unwrap();
+            let Some(string_result) = statement.as_str() else {
+                return Err(DscError::Validation(t!("configure.dependsOn.syntaxIncorrect", dependency = dep).to_string()));
+            };
+            let (resource_type, resource_name) = get_type_and_name(string_result)?;
+            // find the resource by name and type
+            let dep_resource = resources.iter().find(|r| r.name.eq(&resource_name) && r.resource_type.eq(&resource_type));
+            if let Some(dep_resource) = dep_resource {
+                insert_dependency_in_order(resources, order, dep_resource, parser, context)?;
+            } else {
+                return Err(DscError::Validation(t!("configure.dependsOn.dependencyNotFound", resource_name = resource_name, dependency_name = dependency.name).to_string()));
+            }
+        }
+    }
+    // insert the dependency
+    order.push(dependency.clone());
+    Ok(())
 }
 
 fn get_type_and_name(statement: &str) -> Result<(&str, String), DscError> {
@@ -121,6 +157,7 @@ mod tests {
         let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
         let mut parser = parser::Statement::new().unwrap();
         let order = get_resource_invocation_order(&config, &mut parser, &Context::new()).unwrap();
+        assert_eq!(order.len(), 2);
         assert_eq!(order[0].name, "First");
         assert_eq!(order[1].name, "Second");
     }
@@ -132,8 +169,78 @@ mod tests {
         resources:
         - name: First
           type: Test/Null
+          metadata:
+            id: 1
         - name: Second
           type: Test/Null
+          dependsOn:
+          - "[resourceId('Test/Null','First')]"
+        - name: First
+          type: Test/Null
+          metadata:
+            id: 2
+        "#;
+
+        let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
+        let mut parser = parser::Statement::new().unwrap();
+        let order = get_resource_invocation_order(&config, &mut parser, &Context::new()).unwrap();
+        assert_eq!(order.len(), 3);
+        assert_eq!(order[0].name, "First");
+        assert_eq!(order[0].metadata.as_ref().unwrap().other.get("id").unwrap(), "1");
+        assert_eq!(order[1].name, "First");
+        assert_eq!(order[1].metadata.as_ref().unwrap().other.get("id").unwrap(), "2");
+        assert_eq!(order[2].name, "Second");
+    }
+
+    #[test]
+    fn test_duplicate_single_dependency() {
+        let config_yaml: &str = r#"
+        $schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.json
+        resources:
+        - name: First
+          type: Test/Null
+        - name: Second
+          type: Test/Null
+          metadata:
+            id: 1
+          dependsOn:
+          - "[resourceId('Test/Null','First')]"
+        - name: Second
+          type: Test/Null
+          metadata:
+            id: 2
+        "#;
+
+        let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
+        let mut parser = parser::Statement::new().unwrap();
+        let order = get_resource_invocation_order(&config, &mut parser, &Context::new()).unwrap();
+        assert_eq!(order.len(), 3);
+        assert_eq!(order[0].name, "First");
+        assert_eq!(order[1].name, "Second");
+        assert_eq!(order[1].metadata.as_ref().unwrap().other.get("id").unwrap(), "1");
+        assert_eq!(order[2].name, "Second");
+        assert_eq!(order[2].metadata.as_ref().unwrap().other.get("id").unwrap(), "2");
+    }
+
+    #[test]
+    fn test_duplicate_multiple_dependencies() {
+        let config_yaml: &str = r#"
+        $schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.json
+        resources:
+        - name: Third
+          type: Test/Null
+          metadata:
+            id: 1
+          dependsOn:
+          - "[resourceId('Test/Null','Second')]"
+        - name: Second
+          type: Test/Null
+          dependsOn:
+          - "[resourceId('Test/Null','First')]"
+        - name: Third
+          type: Test/Null
+          metadata:
+            id: 2
           dependsOn:
           - "[resourceId('Test/Null','First')]"
         - name: First
@@ -142,8 +249,14 @@ mod tests {
 
         let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
         let mut parser = parser::Statement::new().unwrap();
-        let order = get_resource_invocation_order(&config, &mut parser, &Context::new());
-        assert!(order.is_err());
+        let order = get_resource_invocation_order(&config, &mut parser, &Context::new()).unwrap();
+        assert_eq!(order.len(), 4);
+        assert_eq!(order[0].name, "First");
+        assert_eq!(order[1].name, "Second");
+        assert_eq!(order[2].name, "Third");
+        assert_eq!(order[2].metadata.as_ref().unwrap().other.get("id").unwrap(), "1");
+        assert_eq!(order[3].name, "Third");
+        assert_eq!(order[3].metadata.as_ref().unwrap().other.get("id").unwrap(), "2");
     }
 
     #[test]
@@ -183,6 +296,7 @@ mod tests {
         let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
         let mut parser = parser::Statement::new().unwrap();
         let order = get_resource_invocation_order(&config, &mut parser, &Context::new()).unwrap();
+        assert_eq!(order.len(), 3);
         assert_eq!(order[0].name, "First");
         assert_eq!(order[1].name, "Second");
         assert_eq!(order[2].name, "Third");
@@ -201,6 +315,31 @@ mod tests {
           type: Test/Null
           dependsOn:
           - "[resourceId('Test/Null','Second')]"
+        "#;
+
+        let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
+        let mut parser = parser::Statement::new().unwrap();
+        let order = get_resource_invocation_order(&config, &mut parser, &Context::new());
+        assert!(order.is_err());
+    }
+
+    #[test]
+    fn test_dupelicate_circular_dependency() {
+        let config_yaml: &str = r#"
+        $schema: https://aka.ms/dsc/schemas/v3/bundled/config/document.json
+        resources:
+        - name: Second
+          type: Test/Null
+          dependsOn:
+          - "[resourceId('Test/Null','First')]"
+        - name: First
+          type: Test/Null
+          dependsOn:
+          - "[resourceId('Test/Null','Second')]"
+        - name: Third
+          type: Test/Null
+          dependsOn:
+          - "[resourceId('Test/Null','First')]"
         "#;
 
         let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
@@ -284,6 +423,7 @@ mod tests {
         let config: Configuration = serde_yaml::from_str(config_yaml).unwrap();
         let mut parser = parser::Statement::new().unwrap();
         let order = get_resource_invocation_order(&config, &mut parser, &Context::new()).unwrap();
+        assert_eq!(order.len(), 4);
         assert_eq!(order[0].name, "First");
         assert_eq!(order[1].name, "Second");
         assert_eq!(order[2].name, "Third");
