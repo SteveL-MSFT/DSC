@@ -39,6 +39,17 @@
       <uap:VisualElements DisplayName="$DISPLAYNAME$" Description="DesiredStateConfiguration (DSC) enables a declarative model for configuration, also known as configuration as code." BackgroundColor="transparent" Square150x150Logo="assets\Square150x150Logo.png" Square44x44Logo="assets\Square44x44Logo.png">
       </uap:VisualElements>
     </Application>
+    <Application Id="y2j" Executable="y2j.exe" EntryPoint="Windows.FullTrustApplication">
+      <Extensions>
+        <uap3:Extension Category="windows.appExecutionAlias" EntryPoint="Windows.FullTrustApplication" Executable="y2j.exe">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="y2j.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+      <uap:VisualElements DisplayName="YAML/JSON Converter" Description="A simple command line tool to convert YAML files to JSON format and vice versa." BackgroundColor="transparent" Square150x150Logo="assets\Square150x150Logo.png" Square44x44Logo="assets\Square44x44Logo.png">
+      </uap:VisualElements>
+    </Application>
   </Applications>
 
   <Capabilities>

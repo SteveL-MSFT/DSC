@@ -83,7 +83,8 @@ $filesForWindowsPackage = @(
     'wmiAdapter.psd1',
     'wmiAdapter.psm1',
     'windows_baseline.dsc.yaml',
-    'windows_inventory.dsc.yaml'
+    'windows_inventory.dsc.yaml',
+    "y2j.exe"
 )
 
 $filesForLinuxPackage = @(
