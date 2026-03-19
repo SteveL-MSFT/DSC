@@ -1,0 +1,37 @@
+_version = 1
+
+[main]
+missingOperation = "Missing operation. Usage: windows_firewall get --input <json> | set --input <json> | export [--input <json>]"
+unknownOperation = "Unknown operation: '%{operation}'. Expected: get, set, or export"
+missingInput = "Missing --input argument"
+missingInputValue = "Missing value for --input argument"
+invalidJson = "Invalid JSON input: %{error}"
+windowsOnly = "This resource is only supported on Windows"
+
+[get]
+nameRequired = "'name' is required for the get operation"
+comInitFailed = "Failed to initialize COM: %{error}"
+policyCreateFailed = "Failed to create firewall policy object: %{error}"
+getRulesFailed = "Failed to get firewall rules collection: %{error}"
+itemFailed = "Failed to look up firewall rule: %{error}"
+readRuleFailed = "Failed to read firewall rule properties: %{error}"
+
+[set]
+nameRequired = "'name' is required for the set operation"
+comInitFailed = "Failed to initialize COM: %{error}"
+policyCreateFailed = "Failed to create firewall policy object: %{error}"
+getRulesFailed = "Failed to get firewall rules collection: %{error}"
+removeFailed = "Failed to remove firewall rule: %{error}"
+createRuleFailed = "Failed to create firewall rule COM object: %{error}"
+setPropertyFailed = "Failed to set property '%{property}': %{error}"
+addRuleFailed = "Failed to add firewall rule to policy: %{error}"
+readRuleFailed = "Failed to read firewall rule properties after set: %{error}"
+
+[export]
+comInitFailed = "Failed to initialize COM: %{error}"
+policyCreateFailed = "Failed to create firewall policy object: %{error}"
+getRulesFailed = "Failed to get firewall rules collection: %{error}"
+enumFailed = "Failed to enumerate firewall rules: %{error}"
+castRuleFailed = "Failed to cast enumerated object to firewall rule: %{error}"
+readRuleFailed = "Failed to read firewall rule during export: %{error}"
+unexpectedVariant = "Unexpected VARIANT type in firewall rule enumeration"

@@ -86,6 +86,8 @@
       "windowspowershell.dsc.resource.json",
       "windowsupdate.dsc.resource.json",
       "wu_dsc.exe",
+      "windows_firewall.exe",
+      "windows_firewall.dsc.resource.json",
       "windows_service.exe",
       "windows_service.dsc.resource.json",
       "wmi.dsc.resource.json",
@@ -343,6 +345,21 @@
         "Windows": [
           "reboot_pending.resource.ps1",
           "reboot_pending.dsc.resource.json"
+        ]
+      }
+    },
+    {
+      "Name": "windows_firewall",
+      "Kind": "Resource",
+      "RelativePath": "resources/windows_firewall",
+      "SupportedPlatformOS": "Windows",
+      "IsRust": true,
+      "Binaries": [
+        "windows_firewall"
+      ],
+      "CopyFiles": {
+        "Windows": [
+          "windows_firewall.dsc.resource.json"
         ]
       }
     },
