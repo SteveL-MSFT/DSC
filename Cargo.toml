@@ -26,8 +26,7 @@ members = [
     "grammars/tree-sitter-dscexpression",
     "grammars/tree-sitter-ssh-server-config",
     "y2j",
-    "xtask",
-    "resources/windows_firewall"
+    "xtask"
 ]
 
 # This value is modified by the `Set-DefaultWorkspaceMember` helper.
@@ -57,8 +56,7 @@ default-members = [
     "grammars/tree-sitter-dscexpression",
     "grammars/tree-sitter-ssh-server-config",
     "y2j",
-    "xtask",
-    "resources/windows_firewall"
+    "xtask"
 ]
 
 [workspace.metadata.groups]
@@ -89,8 +87,7 @@ Windows = [
     "grammars/tree-sitter-ssh-server-config",
     "y2j",
     "xtask",
-    "resources/dism_dsc",
-    "resources/windows_firewall"
+    "resources/dism_dsc"
 ]
 macOS = [
     "dsc",
@@ -175,6 +172,8 @@ jsonschema = { version = "0.38", default-features = false }
 # dsc-lib
 linked-hash-map = { version = "0.5" }
 # dsc-lib
+miette = { version = "7.6.0" }
+# dsc-lib
 murmurhash64 = { version = "0.3" }
 # dsc-lib-security_context::not_windows
 nix = { version = "0.31" }
@@ -256,16 +255,14 @@ urlencoding = { version = "2.1" }
 which = { version = "8.0" }
 # dsc-lib
 ipnetwork = { version = "0.21" }
-# WindowsUpdate, windows_service, windows_firewall
+# WindowsUpdate, windows_service
 windows = { version = "0.62", features = [
     "Win32_Foundation",
-    "Win32_NetworkManagement_WindowsFirewall",
     "Win32_System_Com",
     "Win32_System_Ole",
     "Win32_System_Services",
     "Win32_System_Variant",
-    "Win32_System_UpdateAgent",
-    "Win32_UI_Shell"
+    "Win32_System_UpdateAgent"
 ] }
 
 # build-only dependencies
