@@ -10,3 +10,15 @@ providers:
       defaultAreaPath:
         org: msazure
         path: One\MGMT\Compute\PowerShell Desired State Configuration
+- provider: Ownership/CodeReviewers
+  version: 1.0.0
+  metadata:
+    options:
+      allowInheritance: true
+    reviewers:
+    - branches: '[AnyBranch]'
+      scope: '[AnyFile]'
+      optional:
+      - migreene
+      - slee
+      - tplunk
