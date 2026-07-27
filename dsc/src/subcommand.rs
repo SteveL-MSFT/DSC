@@ -809,6 +809,7 @@ pub fn list_resources(
                 (Capability::Delete, "d"),
                 (Capability::DeleteWhatIf, "W"),
                 (Capability::Export, "e"),
+                (Capability::ExportFilter, "f"),
                 (Capability::Resolve, "r"),
             ];
             let mut capabilities = "-".repeat(capability_types.len());

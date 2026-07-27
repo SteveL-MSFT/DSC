@@ -88,6 +88,8 @@ pub enum Capability {
     Export,
     /// The resource supports resolving imported configuration.
     Resolve,
+    /// The resource supports filtering for `export` operation.
+    ExportFilter,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize, JsonSchema)]

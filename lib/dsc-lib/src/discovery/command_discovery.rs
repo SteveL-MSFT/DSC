@@ -1,7 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-use crate::{discovery::{DiscoveryExtensionCache, DiscoveryManifestCache, DiscoveryResourceCache, discovery_trait::{DiscoveryFilter, DiscoveryKind, ResourceDiscovery}, matches_adapter_requirement}, dscresources::{adapted_resource_manifest::AdaptedDscResourceManifest, resource_manifest::SetDeleteArgKind}, parser::Statement, types::{FullyQualifiedTypeName, TypeNameFilter}};
+use crate::{
+    discovery::{DiscoveryExtensionCache, DiscoveryManifestCache, DiscoveryResourceCache, discovery_trait::{DiscoveryFilter, DiscoveryKind, ResourceDiscovery}, matches_adapter_requirement},
+    dscresources::{adapted_resource_manifest::AdaptedDscResourceManifest, resource_manifest::{ExportSchemaOrFiltering, SetDeleteArgKind}},
+    parser::Statement,
+    types::{FullyQualifiedTypeName, TypeNameFilter}
+};
 use crate::{locked_clear, locked_is_empty, locked_extend, locked_clone, locked_get};
 use crate::configure::{config_doc::ResourceDiscoveryMode, context::Context};
 use crate::dscresources::adapted_resource_manifest::AdaptedPathOrContent;
@@ -943,6 +948,10 @@ fn load_resource_manifest(path: &Path, manifest: &ResourceManifest) -> Result<Ds
     if let Some(export) = &manifest.export {
         verify_executable(&manifest.resource_type, "export", &export.executable, path.parent().unwrap());
         capabilities.insert(Capability::Export);
+
+        if export.schema_or_filtering == Some(ExportSchemaOrFiltering::SupportsFiltering(true)) {
+            capabilities.insert(Capability::ExportFilter);
+        }
     }
     if let Some(resolve) = &manifest.resolve {
         verify_executable(&manifest.resource_type, "resolve", &resolve.executable, path.parent().unwrap());
