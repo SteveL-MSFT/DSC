@@ -1,0 +1,91 @@
+# Adapted Registry resource for personalization settings defined in:
+# https://learn.microsoft.com/en-us/windows/apps/develop/settings/settings-common#personalization---colors
+
+$schema: https://aka.ms/dsc/schemas/v3/bundled/adaptedresource/manifest.json
+type: Microsoft.Windows/UserAccount
+kind: resource
+version: 0.1.0
+capabilities:
+- get
+- set
+description: Manage local user accounts on Windows
+author: Microsoft Corporation
+requireAdapter: Microsoft.Windows.Adapter/WMI
+content:
+  wmi_namespace: root\cimv2
+  wmi_class: Win32_UserAccount
+  name:
+    wmiProperty: Name
+  fullName:
+    wmiProperty: FullName
+  description:
+    wmiProperty: Description
+  caption:
+    wmiProperty: Caption
+  sid:
+    wmiProperty: SID
+  status:
+    wmiProperty: Disabled
+    mapJsonToWmi:
+      Enabled: false
+      Disabled: true
+  lockout:
+    wmiProperty: Lockout
+  passwordChangeable:
+    wmiProperty: PasswordChangeable
+  passwordRequired:
+    wmiProperty: PasswordRequired
+schema:
+  embedded:
+    $schema: http://json-schema.org/draft-07/schema#
+    $id: 
+    title: 
+    description: 
+    type: object
+    required: []
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+        title: Name
+        description: The name of the user account.
+        maxLength: 256
+      fullName:
+        type: string
+        title: Full Name
+        description: The full name of the user account.
+        maxLength: 256
+      description:
+        type: string
+        title: Description
+        description: A description of the user account.
+        maxLength: 256
+      caption:
+        type: string
+        title: Caption
+        description: A caption for the user account.
+        maxLength: 256
+        readOnly: true
+      sid:
+        type: string
+        title: SID
+        description: The security identifier (SID) of the user account.
+        maxLength: 256
+        readOnly: true
+      status:
+        type: string
+        title: Status
+        description: The status of the user account.
+        allowedValues: [ "Enabled", "Disabled" ]
+      lockout:
+        type: boolean
+        title: Lockout
+        description: Indicates if the user account is locked out.
+      passwordChangeable:
+        type: boolean
+        title: Password Changeable
+        description: Indicates if the user's password can be changed.
+      passwordRequired:
+        type: boolean
+        title: Password Required
+        description: Indicates if a password is required for the user account.
