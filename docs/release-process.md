@@ -91,8 +91,8 @@ You may need to manually fix any merge conflicts in the PR.
 This needs to be done locally:
 
 ```powershell
-git checkout msazure backport-3.3
-git pull msazure/release/v3.3
+git checkout msazure/backport-3.3
+git pull msazure release/v3.3
 # fix any merge conflicts
 # build and test to ensure everything is working
 ./build.ps1 -Clippy
@@ -112,7 +112,7 @@ Make sure to mark it as `favorite` so you can find it easily in the future.
 
 When running this pipeline:
 
-- ensure the correct release branch is selected, `release/v3.3` in this example
+- ensure the correct release branch is selected, `release/3.3` in this example
 - be sure to check the `OfficialBuild` checkbox and don't check the `PublishToStore` checkbox which currently does not work.
 
 This pipeline will take a while to run and will pause at two points for manual intervention:
